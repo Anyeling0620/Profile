@@ -2,6 +2,7 @@
 @theme {
   --color-border: hsl(var(--border));
   --color-background: hsl(var(--background));
+  --color-secondary: hsl(var(--background-secondary));
   --color-foreground: hsl(var(--foreground));
 
   --color-primary: hsl(var(--primary));
@@ -58,11 +59,22 @@
       opacity: 0;
     }
   }
+
+  @keyframes grow {
+  0% {
+    transform: scaleX(0);
+  }
+
+  100% {
+    transform: scaleX(1);
+  }
+}
 }
 
 @layer base {
   :root {
     --background: 210 40% 98%;
+    --secondary: 220 33% 96%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -75,6 +87,7 @@
 
   .dark {
     --background: 222 47% 4%;
+    --secondary: 222 42% 8%;
     --foreground: 213 31% 91%;
 
     --card: 222 47% 8%;
@@ -129,10 +142,27 @@
   @apply transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg;
 }
 
-@utility gradient-border {
+/* @utility gradient-border {
   @apply relative rounded-md;
   background: linear-gradient(to right, hsl(var(--card)), hsl(var(--card)));
   background: padding-box;
+  border: 1px solid transparent;
+} */
+
+@utility gradient-border {
+  @apply relative rounded-md;
+  background:
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    linear-gradient(
+        135deg,
+        hsl(var(--primary) / 0.75),
+        hsl(190 95% 55% / 0.45),
+        hsl(var(--border) / 0.55)
+      )
+      border-box;
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.08),
+    0 18px 45px hsl(var(--primary) / 0.12);
   border: 1px solid transparent;
 }
 

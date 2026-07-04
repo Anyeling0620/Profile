@@ -70,7 +70,7 @@ export default function Navbar() {
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
           )}
-        >
+        >   
           <div className="flex flex-col space-y-8 text-xxl">
             {navItems.map((item, key) => (
               <a
