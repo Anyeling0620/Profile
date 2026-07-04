@@ -2,11 +2,11 @@ import { cn } from "../lib/utils";
 import { useEffect, useState } from "react";
 import { X, Menu } from "lucide-react";
 const navItems = [
-  { name: "Home", href: "#hero" },
-  { name: "About", href: "#about" },
-  { name: "Skill", href: "#skill" },
-  { name: "Project", href: "#project" },
-  { name: "Contact", href: "#contact" },
+  { name: "首页", href: "#hero" },
+  { name: "关于", href: "#about" },
+  { name: "技能", href: "#skill" },
+  { name: "项目", href: "#project" },
+  { name: "联系", href: "#contact" },
 ];
 
 export default function Navbar() {
@@ -37,7 +37,7 @@ export default function Navbar() {
           className="text-xl font-bold text-primary flex items-center"
         >
           <span className="relative z-10">
-            <span className="text-glow text-foreground">Tech</span> portfolio
+            <span className="text-glow text-foreground">Anyeling</span> 作品集
           </span>
         </a>
 
@@ -58,7 +58,7 @@ export default function Navbar() {
         <button
           onClick={() => setIsMenuOpen((prev) => !prev)}
           className="md:hidden p-2 text-foreground z-50"
-          aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
+          aria-label={isMenuOpen ? "关闭菜单" : "打开菜单"}
         >
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>

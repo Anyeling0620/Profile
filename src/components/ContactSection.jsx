@@ -10,8 +10,8 @@ export default function ContactSection() {
     setIsSubmitting(true);
     setTimeout(() => {
       toast({
-        title: "Message sent!",
-        description: "Thank you for your message. I'll get back to you soon.",
+        title: "消息已发送！",
+        description: "感谢你的留言，我会尽快回复你。",
       });
       setIsSubmitting(false);
     }, 1500);
@@ -21,17 +21,16 @@ export default function ContactSection() {
     <section id="contact" className="py-24 px-4 relative bg-secondary/30">
       <div className="container mx-auto max-w-5xl">
         <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-          Get In <span className="text-primary">Touch</span>
+          联系<span className="text-primary">我</span>
         </h2>
 
         <p className="text-center text-foreground mb-12 max-w-2xl mx-auto">
-          Have a project in mind or want to collaborate? Feel free to reach
-          out.I'm always open to discussing new opportunities.
+          如果你有项目想法、合作机会，或者只是想聊聊技术，欢迎随时联系我。
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <div className="p-8">
-            <h3 className="text-2xl font-semibold mb-6">Contact Information</h3>
+            <h3 className="text-2xl font-semibold mb-6">联系方式</h3>
 
             <div className="space-y-6 justify-center w-full">
               <div className="flex items-start space-x-4">
@@ -40,7 +39,7 @@ export default function ContactSection() {
                 </div>
 
                 <div className="">
-                  <h4 className="font-medium">Email</h4>
+                  <h4 className="font-medium">邮箱</h4>
                   <a
                     href="3463645195@qq.com"
                     className="text-foreground hover:text-primary transition-colors"
@@ -56,7 +55,7 @@ export default function ContactSection() {
                 </div>
 
                 <div className="">
-                  <h4 className="font-medium">Phone</h4>
+                  <h4 className="font-medium">电话</h4>
                   <a
                     href="tel:+86 none"
                     className="text-foreground hover:text-primary transition-colors"
@@ -72,16 +71,16 @@ export default function ContactSection() {
                 </div>
 
                 <div className="">
-                  <h4 className="font-medium">Phone</h4>
+                  <h4 className="font-medium">位置</h4>
                   <a className="text-foreground hover:text-primary transition-colors">
-                    China, Shandong
+                    中国，山东
                   </a>
                 </div>
               </div>
             </div>
 
             <div className="pt-8">
-              <h4 className="font-medium mb-4">Contact With Me</h4>
+              <h4 className="font-medium mb-4">社交平台</h4>
               <div className="flex space-x-8 justify-center">
                 <a href="">
                   <svg
@@ -142,14 +141,14 @@ export default function ContactSection() {
           </div>
 
           <div className="bg-card p-8 rounded-lg shadow-xs">
-            <h3 className="text-2xl font-semibold mb-6">Send a Message</h3>
+            <h3 className="text-2xl font-semibold mb-6">发送消息</h3>
             <form action="" className="" onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label
                   htmlFor="name"
                   className="block text-sm font-medium mb-2"
                 >
-                  Your Name
+                  你的姓名
                 </label>
                 <input
                   type="text"
@@ -166,7 +165,7 @@ export default function ContactSection() {
                   htmlFor="email"
                   className="block text-sm font-medium mb-2"
                 >
-                  Your Email
+                  你的邮箱
                 </label>
                 <input
                   type="text"
@@ -183,14 +182,14 @@ export default function ContactSection() {
                   htmlFor="message"
                   className="block text-sm font-medium mb-2"
                 >
-                  Your Name
+                  留言内容
                 </label>
                 <textarea
                   id="message"
                   value="message"
                   required
                   className="w-full px-4 py-3 rounded-md border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary resize-none"
-                  placeholder="Hello..."
+                  placeholder="你好，我想和你聊聊..."
                 />
               </div>
 
@@ -201,7 +200,7 @@ export default function ContactSection() {
                   "cosmic-button w-full flex items-center gap-2 justify-center",
                 )}
               >
-                {isSubmitting ? "Sending..." : "Send Message"}
+                {isSubmitting ? "发送中..." : "发送消息"}
                 <Send size={16}></Send>
               </button>
             </form>

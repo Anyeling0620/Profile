@@ -1,4 +1,4 @@
 
 export default function NotFound() {
-  return <div>NotFound</div>;
+  return <div>页面未找到</div>;
 }

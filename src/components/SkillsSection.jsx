@@ -17,6 +17,11 @@ const skills = [
 ];
 
 const categories = ["all", "frontend", "tools"];
+const categoryLabels = {
+  all: "全部",
+  frontend: "前端",
+  tools: "工具",
+};
 
 export default function SkillsSection() {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -28,7 +33,7 @@ export default function SkillsSection() {
     <section id="skills" className="py-24 px-4 relative bg-secondary">
       <div className="container mx-auto max-w-5xl">
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
-          My <span className="text-primary">Skills</span>
+          我的<span className="text-primary">技能</span>
         </h2>
 
         <div className={cn("flex flex-wrap justify-center gap-4 mb-12")}>
@@ -43,7 +48,7 @@ export default function SkillsSection() {
               )}
               onClick={() => setActiveCategory(category)}
             >
-              {category}
+              {categoryLabels[category]}
             </button>
           ))}
         </div>

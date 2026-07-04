@@ -2,8 +2,8 @@ import { ExternalLink, FolderGit2, ArrowRight } from "lucide-react";
 const projects = [
   {
     id: 1,
-    title: "Responsive Dashboard",
-    desc: "A beautiful dashboard using React, Tailwindcss, Rechart, Lucide.",
+    title: "响应式仪表盘",
+    desc: "使用 React、Tailwind CSS、Recharts 和 Lucide 构建的精致仪表盘。",
     image: "/projects/project1.png",
     tags: ["React", "Tailwindcss", "Rechart"],
     demoUrl: "http://pannel.jxutcm.top",
@@ -11,8 +11,8 @@ const projects = [
   },
   {
     id: 2,
-    title: "SaaS Landing Page",
-    desc: "A beautiful landing page app using React and Tailwindcss.",
+    title: "软件服务落地页",
+    desc: "使用 React 和 Tailwind CSS 构建的产品落地页应用。",
     image: "/projects/project2.png",
     tags: ["React", "Tailwindcss", "Zustand"],
     demoUrl: "http://home.jxutcm.top",
@@ -20,11 +20,11 @@ const projects = [
   },
   {
     id: 3,
-    title: "Countries Page",
-    desc: "A beautiful introduction page app using React, Tailwindcss, Animation",
+    title: "主页入口",
+    desc: "使用 React、Tailwind CSS 和动画效果构建的介绍页应用。",
     image: "/projects/project3.png",
     tags: ["React", "Tailwindcss", "Animation"],
-    demoUrl: "http://introduction.jxutcm.top",
+    demoUrl: "http://jxutcm.top",
     githubUrl: "https://github.com/Anyeling0620/Profile",
   },
 ];
@@ -33,10 +33,10 @@ export default function ProjectSection() {
     <section id="project" className="py-24 px-4 relative">
       <div className="container mx-auto max-w-5xl">
         <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-          Featured <span className="text-primary">Projects</span>
+          精选<span className="text-primary">项目</span>
         </h2>
         <p className="text-center text-foreground mb-12 max-w-2xl mx-auto">
-          Here are some of my recent projects.
+          这里展示了一些我近期完成的项目。
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -93,7 +93,7 @@ export default function ProjectSection() {
             target="_blank"
             className="cosmic-button w-fit flex mx-auto gap-2 items-center"
           >
-            Check My Github <ArrowRight size={16}></ArrowRight>
+            查看我的代码主页 <ArrowRight size={16}></ArrowRight>
           </a>
         </div>
       </div>
