@@ -20,13 +20,15 @@ function Toast({ className, variant = "default", ...props }) {
   return (
     <ToastPrimitive.Root
       className={cn(
-        "group pointer-events-auto relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all",
+        "group pointer-events-auto relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-md border p-6 shadow-lg transition-all",
         "data-[state=open]:translate-x-0 data-[state=open]:opacity-100 data-[state=closed]:translate-x-full data-[state=closed]:opacity-0",
         "data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)]",
         variant === "default" &&
           "border-border bg-card text-foreground",
+        variant === "success" &&
+          "border-none bg-green-500/80 text-white",
         variant === "destructive" &&
-          "border-red-500/50 bg-red-950 text-red-50",
+          "border-none bg-red-500/80 text-white",
         className,
       )}
       {...props}
@@ -64,7 +66,7 @@ function ToastClose({ className, ...props }) {
 function ToastTitle({ className, ...props }) {
   return (
     <ToastPrimitive.Title
-      className={cn("text-sm font-semibold", className)}
+      className={cn("text-lg font-semibold", className)}
       {...props}
     />
   );
@@ -73,7 +75,7 @@ function ToastTitle({ className, ...props }) {
 function ToastDescription({ className, ...props }) {
   return (
     <ToastPrimitive.Description
-      className={cn("text-sm text-foreground/80", className)}
+      className={cn("text-sm text-white", className)}
       {...props}
     />
   );

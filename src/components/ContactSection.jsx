@@ -1,19 +1,74 @@
 import { Mail, MapPin, Phone, Send } from "lucide-react";
-import { cn } from "../lib/utils";
-import { useToast } from "../hooks/useToast";
 import { useState } from "react";
+
+import { useToast } from "../hooks/useToast";
+import { getContactMessageCooldown, sendEmailjsMessage } from "../lib/emailjs";
+import { cn } from "../lib/utils";
+
+const EMAILJS_CONFIG = {
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+};
+
+const initialFormData = {
+  user_name: "",
+  user_email: "",
+  message: "",
+};
+
 export default function ContactSection() {
   const { toast } = useToast();
+  const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setTimeout(() => {
+  const [lastSentAt, setLastSentAt] = useState(0);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((currentFormData) => ({
+      ...currentFormData,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const cooldownMs = getContactMessageCooldown(lastSentAt);
+
+    if (cooldownMs > 0) {
       toast({
-        title: "消息已发送！",
-        description: "感谢你的留言，我会尽快回复你。",
+        title: "发送太频繁",
+        description: `请 ${Math.ceil(cooldownMs / 1000)} 秒后再试。`,
+        variant: "destructive",
       });
-      setIsSubmitting(false);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    setTimeout(async () => {
+      try {
+        await sendEmailjsMessage(formData, EMAILJS_CONFIG);
+        setLastSentAt(Date.now());
+        toast({
+          title: "消息已发送！",
+          description: "感谢你的留言，我会尽快回复你。",
+          variant: "success",
+        });
+        setFormData(initialFormData);
+      } catch (error) {
+        toast({
+          title: "发送失败",
+          description:
+            error instanceof Error
+              ? error.message
+              : "请稍后再试，或直接通过邮箱联系我。",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }, 1500);
   };
 
@@ -35,13 +90,13 @@ export default function ContactSection() {
             <div className="space-y-6 justify-center w-full">
               <div className="flex items-start space-x-4">
                 <div className="p-3 rounded-full bg-primary/10">
-                  <Mail className="h-6 w-6 text-primary"></Mail>
+                  <Mail className="h-6 w-6 text-primary" />
                 </div>
 
-                <div className="">
+                <div>
                   <h4 className="font-medium">邮箱</h4>
                   <a
-                    href="3463645195@qq.com"
+                    href="mailto:3463645195@qq.com"
                     className="text-foreground hover:text-primary transition-colors"
                   >
                     3463645195@qq.com
@@ -51,13 +106,13 @@ export default function ContactSection() {
 
               <div className="flex items-start space-x-4">
                 <div className="p-3 rounded-full bg-primary/10">
-                  <Phone className="h-6 w-6 text-primary"></Phone>
+                  <Phone className="h-6 w-6 text-primary" />
                 </div>
 
-                <div className="">
+                <div>
                   <h4 className="font-medium">电话</h4>
                   <a
-                    href="tel:+86 none"
+                    href="tel:+86"
                     className="text-foreground hover:text-primary transition-colors"
                   >
                     +86 none
@@ -67,14 +122,12 @@ export default function ContactSection() {
 
               <div className="flex items-start space-x-4">
                 <div className="p-3 rounded-full bg-primary/10">
-                  <MapPin className="h-6 w-6 text-primary"></MapPin>
+                  <MapPin className="h-6 w-6 text-primary" />
                 </div>
 
-                <div className="">
+                <div>
                   <h4 className="font-medium">位置</h4>
-                  <a className="text-foreground hover:text-primary transition-colors">
-                    中国，山东
-                  </a>
+                  <p className="text-foreground">中国，山东</p>
                 </div>
               </div>
             </div>
@@ -82,10 +135,10 @@ export default function ContactSection() {
             <div className="pt-8">
               <h4 className="font-medium mb-4">社交平台</h4>
               <div className="flex space-x-8 justify-center">
-                <a href="">
+                <a href="" aria-label="Twitter">
                   <svg
                     t="1783183182814"
-                    class="icon"
+                    className="icon"
                     viewBox="0 0 1190 1024"
                     version="1.1"
                     xmlns="http://www.w3.org/2000/svg"
@@ -100,10 +153,10 @@ export default function ContactSection() {
                     ></path>
                   </svg>
                 </a>
-                <a href="">
+                <a href="" aria-label="Discord">
                   <svg
                     t="1783183205446"
-                    class="icon"
+                    className="icon"
                     viewBox="0 0 1325 1024"
                     version="1.1"
                     xmlns="http://www.w3.org/2000/svg"
@@ -118,10 +171,10 @@ export default function ContactSection() {
                     ></path>
                   </svg>
                 </a>
-                <a href="">
+                <a href="" aria-label="Instagram">
                   <svg
                     t="1783183236346"
-                    class="icon"
+                    className="icon"
                     viewBox="0 0 1024 1024"
                     version="1.1"
                     xmlns="http://www.w3.org/2000/svg"
@@ -142,37 +195,43 @@ export default function ContactSection() {
 
           <div className="bg-card p-8 rounded-lg shadow-xs">
             <h3 className="text-2xl font-semibold mb-6">发送消息</h3>
-            <form action="" className="" onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label
-                  htmlFor="name"
+                  htmlFor="user_name"
                   className="block text-sm font-medium mb-2"
                 >
                   你的姓名
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  value="name"
+                  id="user_name"
+                  name="user_name"
+                  value={formData.user_name}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
                   required
-                  className="w-full px-4 py-3 rounded-md border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-3 rounded-md border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-70"
                   placeholder="Anyeling..."
                 />
               </div>
 
               <div className="mb-4">
                 <label
-                  htmlFor="email"
+                  htmlFor="user_email"
                   className="block text-sm font-medium mb-2"
                 >
                   你的邮箱
                 </label>
                 <input
-                  type="text"
-                  id="emali"
-                  value="emali"
+                  type="email"
+                  id="user_email"
+                  name="user_email"
+                  value={formData.user_email}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
                   required
-                  className="w-full px-4 py-3 rounded-md border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-3 rounded-md border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-70"
                   placeholder="jojo@gmail.com"
                 />
               </div>
@@ -186,9 +245,12 @@ export default function ContactSection() {
                 </label>
                 <textarea
                   id="message"
-                  value="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
                   required
-                  className="w-full px-4 py-3 rounded-md border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary resize-none"
+                  className="w-full px-4 py-3 rounded-md border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary resize-none disabled:cursor-not-allowed disabled:opacity-70"
                   placeholder="你好，我想和你聊聊..."
                 />
               </div>
@@ -201,7 +263,7 @@ export default function ContactSection() {
                 )}
               >
                 {isSubmitting ? "发送中..." : "发送消息"}
-                <Send size={16}></Send>
+                <Send size={16} />
               </button>
             </form>
           </div>
