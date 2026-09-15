@@ -3,24 +3,44 @@ import { cn } from "../lib/utils";
 const skills = [
   // Frontend
   { name: "HTML/CSS", level: 90, category: "frontend" },
-  { name: "JavaScript", level: 90, category: "frontend" },
   { name: "React", level: 90, category: "frontend" },
   { name: "TypeScript", level: 85, category: "frontend" },
   { name: "Tailwind CSS", level: 90, category: "frontend" },
-  { name: "Next.js", level: 80, category: "frontend" },
-
+  { name: "Tanstack", level: 80, category: "frontend" },
+  { name: "Taro", level: 80, category: "frontend" },
+    // backend
+  { name: "Go", level: 90, category: "backend" },
+  { name: "Gin", level: 90, category: "backend" },
+  { name: "Gorm", level: 80, category: "backend" },
+  { name: "Postgresql", level: 85, category: "backend" },
+  { name: "Redis", level: 85, category: "backend" },
+  { name: "Kafka", level: 85, category: "backend" },
+  { name: "RocketMQ", level: 90, category: "backend" },
   // Tools
-  { name: "Git/GitHub", level: 90, category: "tools" },
-  { name: "Docker", level: 70, category: "tools" },
-  { name: "VS Code", level: 95, category: "tools" },
-  { name: "Codex", level: 90, category: "tools" },
+  { name: "Git/GitHub/Gitea", level: 90, category: "tools" },
+  { name: "Docker", level: 90, category: "tools" },
+  { name: "ApiFox", level: 90, category: "tools" },
+  { name: "Jenkins", level: 85, category: "tools" },
+  { name: "Jmeter", level: 80, category: "tools" },
+  { name: "Prometheus", level: 80, category: "tools" },
+  { name: "Grafana", level: 80, category: "tools" },
+
+    // Aicoding
+  { name: "Codex", level: 90, category: "aiCoding" },
+  { name: "Claude Code", level: 85, category: "aiCoding" },
+  { name: "MCP", level: 85, category: "aiCoding" },
+  { name: "Skills", level: 85, category: "aiCoding" },
+  { name: "SDD", level: 85, category: "aiCoding" },
+  { name: "Harness Engineering", level: 85, category: "aiCoding" },
 ];
 
-const categories = ["all", "frontend", "tools"];
+const categories = ["all", "frontend","backend", "tools","aiCoding"];
 const categoryLabels = {
   all: "全部",
   frontend: "前端",
+  backend: "后端",
   tools: "工具",
+  aiCoding: "AI Coding"
 };
 
 export default function SkillsSection() {
