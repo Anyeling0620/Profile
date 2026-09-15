@@ -2,30 +2,39 @@ import { ExternalLink, FolderGit2, ArrowRight } from "lucide-react";
 const projects = [
   {
     id: 1,
-    title: "响应式仪表盘",
-    desc: "使用 React、Tailwind CSS、Recharts 和 Lucide 构建的精致仪表盘。",
+    title: "医疗管理面板",
+    desc: "覆盖「医生排班 -> 患者实名挂号 -> 扫码支付 -> 医生接诊写病历」全链路的医疗预约挂号平台",
     image: "/projects/project1.png",
-    tags: ["React", "Tailwindcss", "Rechart"],
-    demoUrl: "http://pannel.jxutcm.top",
-    githubUrl: "https://github.com/Anyeling0620/DashboardFrontend",
+    tags: ["Golang", "PGSQL", "Redis", "RocketMQ", "TypeScript", "React", "Tailwind CSS"],
+    demoUrl: "https://medical.jxutcm.top",
+    githubUrl: "https://github.com/Anyeling0620/Medical-Backend",
+  },
+  {
+    id: 4,
+    title: "仿联想商城全栈项目",
+    desc: "使用 React 19、TypeScript 和 Tailwind CSS 构建的联想商城电商前台，覆盖商品浏览、秒杀、搜索、购物车、下单支付到售后的完整链路。",
+    image: "/projects/project4.png",
+    tags: ["React", "TypeScript", "Vite", "Tailwindcss", "Zustand", "Ant Design", "React Router"],
+    demoUrl: "https://shop.lenovo.jxutcm.top",
+    githubUrl: "https://github.com/Anyeling0620/Lenovo-Shop",
   },
   {
     id: 2,
+    title: "响应式仪表盘",
+    desc: "使用 React、Tailwind CSS、Recharts 和 Lucide 构建的精致仪表盘。",
+    image: "/projects/project3.png",
+    tags: ["React", "Tailwindcss", "Rechart"],
+    demoUrl: "https://pannel.jxutcm.top",
+    githubUrl: "https://github.com/Anyeling0620/DashboardFrontend",
+  },
+  {
+    id: 3,
     title: "软件服务落地页",
     desc: "使用 React 和 Tailwind CSS 构建的产品落地页应用。",
     image: "/projects/project2.png",
     tags: ["React", "Tailwindcss", "Zustand"],
-    demoUrl: "http://home.jxutcm.top",
+    demoUrl: "https://home.jxutcm.top",
     githubUrl: "https://github.com/Anyeling0620/SaaSLanding",
-  },
-  {
-    id: 3,
-    title: "主页入口",
-    desc: "使用 React、Tailwind CSS 和动画效果构建的介绍页应用。",
-    image: "/projects/project3.png",
-    tags: ["React", "Tailwindcss", "Animation"],
-    demoUrl: "http://jxutcm.top",
-    githubUrl: "https://github.com/Anyeling0620/Profile",
   },
 ];
 export default function ProjectSection() {
@@ -39,7 +48,7 @@ export default function ProjectSection() {
           这里展示了一些我近期完成的项目。
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
           {projects.map((project, key) => (
             <div
               className="group bg-card rounded-lg overflow-hidden shadow-xs card-hover gradient-border"
