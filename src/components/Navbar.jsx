@@ -272,13 +272,25 @@ export default function Navbar() {
             联系我
           </a>
 
+          {/* 移动端菜单开关。
+              抽屉打开时**隐藏本按钮**：抽屉顶栏自带关闭按钮，两者位置几乎重合
+              （实测 326,20/40×40 与 329,23/36×36 叠在一起），会出现「两个 ×」。
+              用 opacity + pointer-events 隐藏而非 md:hidden，
+              这样关闭动画期间不会突然跳变；同时从可访问性树里移除。 */}
           <button
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
             aria-label={isMenuOpen ? "关闭菜单" : "打开菜单"}
             aria-expanded={isMenuOpen}
             aria-controls="mobile-nav-drawer"
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/[0.1] bg-white/[0.04] text-foreground transition-colors duration-300 hover:border-primary-soft/40 hover:bg-primary/[0.12] md:hidden"
+            aria-hidden={isMenuOpen}
+            tabIndex={isMenuOpen ? -1 : 0}
+            className={cn(
+              "grid h-9 w-9 place-items-center rounded-full border border-white/[0.1] bg-white/[0.04] text-foreground transition-all duration-300 hover:border-primary-soft/40 hover:bg-primary/[0.12] md:hidden",
+              isMenuOpen
+                ? "pointer-events-none scale-90 opacity-0"
+                : "pointer-events-auto scale-100 opacity-100",
+            )}
           >
             {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>

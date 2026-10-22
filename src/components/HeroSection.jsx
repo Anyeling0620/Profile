@@ -177,12 +177,16 @@ export default function HeroSection() {
 
               间距说明：leading-[0.98] 会压掉行框上下留白，大字号的字形上缘
               （尤其 Latin 大写与中文混排）容易顶到上一行的 "HELLO, I'M"。
-              因此这里给足 mt（移动端略小），并在下方 subtitle 也留出对应间距。 */}
-          <h1 className="mt-6 text-[clamp(2.6rem,9vw,5.6rem)] font-black leading-[1.02] tracking-[-0.035em] sm:mt-7 lg:mt-8">
+              因此这里给足 mt（移动端略小），并在下方 subtitle 也留出对应间距。
+
+              下伸部空间：leading-[1.02] 的行框底部不足以容纳 g/y/p/j/q 的下伸部分
+              （Kuang 的 g 会伸出行框）。这里用 pb 把行框底部撑开，
+              避免副标题按行框边界上移后压住字形。 */}
+          <h1 className="mt-6 text-[clamp(2.6rem,9vw,5.6rem)] font-black leading-[1.12] tracking-[-0.035em] sm:mt-7 lg:mt-8">
             <span className="sr-only">{NAME}</span>
             <span
               aria-hidden="true"
-              className="aurora-text inline-flex flex-wrap items-baseline justify-center gap-x-[0.24em] pb-2 drop-shadow-[0_0_38px_rgba(124,92,255,0.35)]"
+              className="aurora-text inline-flex flex-wrap items-baseline justify-center gap-x-[0.24em] pb-[0.12em] drop-shadow-[0_0_38px_rgba(124,92,255,0.35)]"
             >
               {NAME.split(" ").map((word, i) => (
                 <span

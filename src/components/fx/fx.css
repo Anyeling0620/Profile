@@ -25,14 +25,16 @@
   }
 }
 
-/* ---------- 遮罩揭示：clip-path 从底部擦出，比单纯淡入更「高级」 ---------- */
+/* ---------- 遮罩揭示：clip-path 从底部擦出，比单纯淡入更「高级」 ----------
+   末帧用 clip-path: none（而非 inset(0 0 0 0)）：
+   inset 即使值为 0 也会建立裁剪上下文，把 g/y/p/j/q 等下伸部沿行框底切平。 */
 @keyframes fx-clip-reveal {
   from {
     clip-path: inset(0 0 100% 0);
     transform: translate3d(0, 0.12em, 0);
   }
   to {
-    clip-path: inset(0 0 0 0);
+    clip-path: none;
     transform: translate3d(0, 0, 0);
   }
 }
@@ -172,7 +174,11 @@
   animation: fx-rise 0.72s cubic-bezier(0.22, 1, 0.36, 1) var(--fx-delay, 0ms) both;
 }
 
-/* 遮罩揭示：给「不含 background-clip:text」的文字块用 */
+/* 遮罩揭示：给「不含 background-clip:text」的文字块用。
+   ⚠️ 末帧必须是 clip-path: none，而不是 inset(0 0 0 0)。
+   原因：inset(0 0 0 0) 即使看起来「没裁」，也会建立裁剪上下文，
+   把字母的下伸部（g / y / p / j / q）沿着行框底边切平——
+   Hero 的 "Kuang" 里的 g 就被切了。only none 才会完全退出裁剪。 */
 .fx-clip-reveal {
   animation: fx-clip-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) var(--fx-delay, 0ms)
     both;
