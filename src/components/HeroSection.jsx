@@ -10,7 +10,7 @@ export default function HeroSection() {
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             <span className="opacity-0 animate-fade-in">你好，我是 </span>
             <span className="text-primary opacity-0 animate-fade-in-delay-1">
-              邝梓濠{" "}
+              Kuang Zihao{" "}
             </span>
             <span className="text-gradient ml-2 opacity-0 animate-fade-in-delay-2">
               个人开发

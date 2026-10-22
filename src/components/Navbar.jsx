@@ -37,7 +37,7 @@ export default function Navbar() {
           className="text-xl font-bold text-primary flex items-center"
         >
           <span className="relative z-10">
-            <span className="text-glow text-foreground">邝梓濠</span> 作品集
+            <span className="text-glow text-foreground">Kuang Zihao</span> 作品集
           </span>
         </a>
 
