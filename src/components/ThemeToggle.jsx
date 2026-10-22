@@ -1,32 +1,28 @@
-import { useEffect, useState } from "react";
-import { Sun, Moon } from "lucide-react";
-import { cn } from "../lib/utils";
+import { useEffect } from "react";
+
+/**
+ * 全站唯一深色基调：不再提供浅色/深色切换。
+ *
+ * 保留组件名与默认导出，仅为兼容既有的 <ToggleTheme /> 引用点（pages/Home.jsx）。
+ * 行为：确保 <html> 始终处于深色状态，并清理历史遗留的 "theme" 偏好，
+ * 避免旧访客的 localStorage 把页面拉回浅色。渲染为空。
+ */
 export default function ThemeToggle() {
-  const [isDarkMode, setIsDarkMode] = useState(
-    () => localStorage.getItem("theme") === "dark",
-  );
-
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
-    localStorage.setItem("theme", isDarkMode ? "dark" : "light");
-  }, [isDarkMode]);
+    const root = document.documentElement;
+    root.classList.remove("light");
+    root.removeAttribute("data-theme");
+    root.style.colorScheme = "dark";
 
-  const toggleTheme = () => {
-    setIsDarkMode((currentMode) => !currentMode);
-  };
-  return (
-    <button
-      onClick={toggleTheme}
-      className={cn(
-        "fixed max-sm:hidden top-5 right-5 z-50 p-2 rounded-full transition-colors duration-300",
-        "focus:outline-hidden",
-      )}
-    >
-      {isDarkMode ? (
-        <Sun className="h-6 w-6 text-yellow-300" />
-      ) : (
-        <Moon className="h-6 w-6 text-blue-900" />
-      )}
-    </button>
-  );
+    // 清除历史浅色偏好，防止回访时闪白
+    try {
+      if (localStorage.getItem("theme") !== "dark") {
+        localStorage.setItem("theme", "dark");
+      }
+    } catch {
+      /* 隐私模式下 localStorage 不可写，忽略 */
+    }
+  }, []);
+
+  return null;
 }

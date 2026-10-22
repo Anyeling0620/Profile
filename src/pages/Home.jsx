@@ -1,10 +1,9 @@
 import ToggleTheme from "../components/ThemeToggle";
-import StarBackground from "../components/StarBackground";
+import AuroraBackground from "../components/AuroraBackground";
 import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
 import AboutSection from "../components/AboutSection";
 import SkillsSection from "../components/SkillsSection";
-import ProjectSection from "../components/ProjectSection";
 import ContactSection from "../components/ContactSection";
 import Footer from "../components/Footer";
 export default function Home() {
@@ -13,7 +12,7 @@ export default function Home() {
       {/* 主题切换 */}
       <ToggleTheme></ToggleTheme>
       {/* 背景 */}
-      <StarBackground></StarBackground>
+      <AuroraBackground></AuroraBackground>
       {/* narbar */}
       <Navbar></Navbar>
       {/* main content  */}
@@ -21,7 +20,6 @@ export default function Home() {
         <HeroSection></HeroSection>
         <AboutSection></AboutSection>
         <SkillsSection></SkillsSection>
-        <ProjectSection></ProjectSection>
         <ContactSection></ContactSection>
       </main>
       <Footer></Footer>

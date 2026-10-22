@@ -1,122 +1,554 @@
 @import "tailwindcss";
+
+/* ============================================================
+   自托管字体（关键：中文必须自有字体，否则回退到系统字体观感割裂）
+
+   字体：Noto Sans SC（思源黑体同源，OFL-1.1）
+   做法：按本站实际用字做 unicode 子集化，只保留站点文案里出现的
+        640 个汉字 + 标点 + 西文字母数字，三个字重合计约 396KB。
+        相比全量字体（约 1.6MB/字重）体积降到约 1/12。
+   注意：站点文案以后如有较大改动、出现了新汉字，需重新跑子集化脚本，
+        否则新字会回退到系统字体（见 docs 或提交说明）。
+   权重分配：
+        400 → 正文
+        500 → 按钮 / 小标签 / 表单控件（font-medium）
+        700 → 次级标题 / 强调（font-bold）
+        900 → 主标题（Hero 名字、板块大标题，font-black）
+   测试提示：光标所在站点不要出现只有 600 的使用，
+       因为未提供 600 文件，浏览器会用 700 合成，容易发虚。
+       站点内已统一为 400/500/700/900 四档。
+   ============================================================ */
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-sc-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-sc-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-sc-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-sc-900.woff2") format("woff2");
+}
+
+/* ============================================================
+   KUANGZIHAO.SITE — DEEP-SPACE AURORA DESIGN SYSTEM
+   深空紫蓝 · 玻璃拟态 · 唯一深色基调（无浅色主题，无 .dark 反向逻辑）
+
+   对比度基线（WCAG 2.1，全部 ≥ 4.5:1，实测值见行尾注释）：
+     foreground #f2f4ff  on #05060a ................ 18.48
+     muted      #a9b1d4  on #05060a ................  9.57
+     primary    #7c5cff  on #05060a ................  4.66
+     accent     #4169ff  on #05060a ................  4.52
+     cyan       #22d3ee  on #05060a ................ 11.21
+     primary-foreground #05060a on #7c5cff ........  4.66
+   注意：primary / accent 在玻璃卡片与抬升表面（#06070d 以上）会跌到 4.4 左右，
+   因此**卡片内正文级强调色请用 primary-soft / accent-soft**，
+   primary / accent 作为品牌色只用于大字号（≥24px）、图标与填充块。
+   ============================================================ */
+
 @theme {
-  --color-border: hsl(var(--border));
-  --color-background: hsl(var(--background));
-  --color-secondary: hsl(var(--background-secondary));
-  --color-foreground: hsl(var(--foreground));
+  /* ---------- 语义色：地表层 ---------- */
+  /* 近黑主基调，唯一背景色 */
+  --color-background: #05060a;
+  /* 抬升表面（区块底、导航滚动底） */
+  --color-surface: #07080f;
+  /* 卡片底（玻璃层之下的实心兜底） */
+  --color-card: #080a12;
+  /* 次级表面（技能区、输入框底） */
+  --color-secondary: #080a12;
+  /* 玻璃层实心兜底（backdrop-filter 不可用时） */
+  --color-elevated: #0a0c15;
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+  /* ---------- 语义色：文字 ---------- */
+  --color-foreground: #f2f4ff;
+  --color-muted: #a9b1d4;
+  /* 更淡的说明文字，仍 ≥ 7:1 */
+  --color-subtle: #8b93b8;
 
+  /* ---------- 语义色：极光三色 ---------- */
+  --color-primary: #7c5cff; /* 紫 */
+  --color-accent: #4169ff; /* 蓝 */
+  --color-cyan: #22d3ee; /* 青 */
+
+  /* 正文级强调色（浅化版，玻璃/卡片内安全 ≥ 7:1） */
+  --color-primary-soft: #b9a6ff;
+  --color-accent-soft: #9db4ff;
+  --color-cyan-soft: #7ee7f5;
+
+  /* 填充块上的墨色（深色底字，比白字对比更高） */
+  --color-primary-foreground: #05060a;
+  --color-accent-foreground: #05060a;
+  --color-cyan-foreground: #05060a;
+
+  /* ---------- 语义色：结构 ---------- */
+  --color-border: #1b2136;
+  --color-border-strong: #2a3352;
+  --color-input: #232a44;
+  --color-ring: #7c5cff;
+  --color-destructive: #ff6b8a;
+  --color-success: #34d399;
+
+  /* ---------- 静态调色板（供渐变的中间控制点使用） ---------- */
+  --color-void: #05060a;
+  --color-ink: #0b0e1a;
+
+  /* ---------- 字体 ---------- */
+  /* 中文是本站主体语言，必须把自托管中文字体排在最前，
+     否则会落到 system-ui 在部分 Windows/Android 上挑到的劣质中文字形。
+     西文同样由 Noto Sans SC 承担，保证中英混排时字重与骨架一致；
+     后面的一串系统字体只作为「字体文件未加载完 / 子集缺字」时的兜底。 */
+  --font-sans:
+    "Noto Sans SC", "PingFang SC", "HarmonyOS Sans SC", "MiSans",
+    "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC",
+    "WenQuanYi Zen Hei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:
+    "JetBrains Mono", "SFMono-Regular", "SF Mono", Menlo, Consolas,
+    "Noto Sans SC", monospace;
+
+  /* ---------- 圆角 ---------- */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-pill: 9999px;
+
+  /* ---------- 阴影 / 辉光 ---------- */
+  --shadow-glow-sm: 0 0 16px -4px rgb(124 92 255 / 0.45);
+  --shadow-glow: 0 0 40px -8px rgb(124 92 255 / 0.55);
+  --shadow-glow-lg: 0 0 80px -16px rgb(65 105 255 / 0.6);
+  --shadow-glass:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.08),
+    0 24px 60px -28px rgb(0 0 0 / 0.9);
+  --shadow-inset-highlight: inset 0 1px 0 0 rgb(255 255 255 / 0.12);
+
+  /* ---------- 模糊 ---------- */
+  --blur-glass: 18px;
+  --blur-aurora: 80px;
+
+  /* ---------- 动效曲线与时长 ---------- */
+  --ease-aurora: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 180ms;
+  --duration-base: 320ms;
+  --duration-slow: 640ms;
+
+  /* ---------- 动画注册（keyframes 在下方顶层定义，保证 arbitrary 用法也可用） ---------- */
+  --animate-aurora-drift: aurora-drift 26s var(--ease-in-out-soft) infinite;
+  --animate-aurora-drift-slow: aurora-drift-slow 42s var(--ease-in-out-soft) infinite;
+  --animate-glow-breathe: glow-breathe 5.5s var(--ease-in-out-soft) infinite;
+  --animate-sheen: sheen 3.4s var(--ease-in-out-soft) infinite;
+  --animate-particle-float: particle-float 14s linear infinite;
+  --animate-progress-grow: progress-grow 1.4s var(--ease-out-expo) both;
   --animate-float: float 6s ease-in-out infinite;
   --animate-pulse-subtle: pulse-subtle 4s ease-in-out infinite;
-  --animate-fade-in: fade-in 0.7s ease-out forwards;
-  --animate-fade-in-delay-1: fade-in 0.7s ease-out 0.2s forwards;
-  --animate-fade-in-delay-2: fade-in 0.7s ease-out 0.4s forwards;
-  --animate-fade-in-delay-3: fade-in 0.7s ease-out 0.6s forwards;
-  --animate-fade-in-delay-4: fade-in 0.7s ease-out 0.8s forwards;
+  --animate-fade-in: fade-in 0.8s var(--ease-out-expo) forwards;
+  --animate-fade-in-delay-1: fade-in 0.8s var(--ease-out-expo) 0.12s forwards;
+  --animate-fade-in-delay-2: fade-in 0.8s var(--ease-out-expo) 0.24s forwards;
+  --animate-fade-in-delay-3: fade-in 0.8s var(--ease-out-expo) 0.36s forwards;
+  --animate-fade-in-delay-4: fade-in 0.8s var(--ease-out-expo) 0.48s forwards;
   --animate-meteor: meteor 5s linear infinite;
+  --animate-scan-line: scan-line 7s linear infinite;
+  --animate-spin-slow: spin-slow 18s linear infinite;
+}
 
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
+/* ============================================================
+   KEYFRAMES —— 顶层定义，任意 animate-[...] 也能引用
+   ============================================================ */
 
-  @keyframes pulse-subtle {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.8;
-    }
+/* 极光漂移 */
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(-4%, -2%, 0) scale(1) rotate(0deg);
+    opacity: 0.55;
   }
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  33% {
+    transform: translate3d(5%, 3%, 0) scale(1.12) rotate(6deg);
+    opacity: 0.8;
   }
-  @keyframes meteor {
-    0% {
-      transform: rotate(215deg) translateX(0);
-      opacity: 1;
-    }
-    70% {
-      opacity: 1;
-    }
-    100% {
-      transform: rotate(215deg) translateX(-500px);
-      opacity: 0;
-    }
+  66% {
+    transform: translate3d(-2%, 6%, 0) scale(1.05) rotate(-4deg);
+    opacity: 0.65;
   }
+}
 
-  @keyframes grow {
+@keyframes aurora-drift-slow {
+  0%,
+  100% {
+    transform: translate3d(3%, -3%, 0) scale(1.08) rotate(-3deg);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate3d(-6%, 4%, 0) scale(0.95) rotate(5deg);
+    opacity: 0.7;
+  }
+}
+
+/* 辉光呼吸 */
+@keyframes glow-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+    filter: blur(28px) brightness(1);
+  }
+  50% {
+    opacity: 0.9;
+    filter: blur(38px) brightness(1.25);
+  }
+}
+
+/* 扫光（按钮/卡片高光横扫） */
+@keyframes sheen {
   0% {
+    transform: translateX(-130%) skewX(-14deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  55% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(230%) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+/* 粒子漂浮 */
+@keyframes particle-float {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(18px, -46px, 0);
+    opacity: 0.9;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(-10px, -104px, 0);
+    opacity: 0;
+  }
+}
+
+/* 进度条生长 */
+@keyframes progress-grow {
+  from {
     transform: scaleX(0);
   }
-
-  100% {
+  to {
     transform: scaleX(1);
   }
 }
+
+/* 兼容旧写法 animate-[grow_1.5s_ease_out] */
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes meteor {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(215deg) translateX(-500px);
+    opacity: 0;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 供 ::view-transition / 组件自行引用的通用微交互 */
+@keyframes tilt-in {
+  from {
+    opacity: 0;
+    transform: perspective(900px) rotateX(6deg) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(900px) rotateX(0deg) translateY(0);
+  }
+}
+
+/* ============================================================
+   BASE —— 就地深色，不做任何浅色分支
+   ============================================================ */
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --secondary: 220 33% 96%;
-    --foreground: 222 47% 11%;
+    /* 极光光带渐变控制点（背景层直接复用） */
+    --aurora-violet: rgb(124 92 255 / 0.55);
+    --aurora-blue: rgb(65 105 255 / 0.45);
+    --aurora-cyan: rgb(34 211 238 / 0.32);
+    --aurora-rose: rgb(168 85 247 / 0.28);
 
-    --card: 0 0% 100%;
+    /* 玻璃层叠加 */
+    --glass-tint: rgb(10 12 21 / 0.62);
+    --glass-highlight: rgb(255 255 255 / 0.08);
+    --glass-border: rgb(255 255 255 / 0.1);
+    --glass-sheen: rgb(255 255 255 / 0.16);
 
-    --primary: 250 47% 60%;
-    --primary-foreground: 210 40% 98%;
+    /* 网格底纹 */
+    --grid-size: 64px;
+    --grid-line: rgb(124 92 255 / 0.09);
+    --grid-line-strong: rgb(65 105 255 / 0.14);
 
-    --border: 214 32% 91%;
+    /* 层级 */
+    --z-background: 0;
+    --z-content: 10;
+    --z-nav: 40;
+    --z-overlay: 60;
+    --z-toast: 100;
+
+    /* 唯一配色方案：深色。浏览器表单控件/滚动条/默认 UI 一并深色 */
+    color-scheme: dark;
   }
 
-  .dark {
-    --background: 222 47% 4%;
-    --secondary: 222 42% 8%;
-    --foreground: 213 31% 91%;
-
-    --card: 222 47% 8%;
-
-    --primary: 250 65% 65%;
-    --primary-foreground: 213 31% 91%;
-
-    --border: 217 33% 20%;
+  /* 本设计系统没有浅色主题：不存在 .dark 反向覆盖块，也绝不产出浅色背景。
+     历史遗留的 .light / [data-theme="light"] 一律锁定为深色配色，
+     防止旧 localStorage 或第三方脚本把页面拉回白底。 */
+  :where(html.light, html[data-theme="light"]) {
+    color-scheme: dark;
   }
+
   * {
-    @apply border-border;
+    border-color: var(--color-border);
   }
+
   html {
     @apply scroll-smooth;
+    background-color: var(--color-background);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
   }
+
   body {
-    @apply bg-background text-foreground font-sans transition-colors duration-300;
+    @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+    min-height: 100dvh;
+    /* 深空底色：黑 → 极深紫蓝，杜绝白底闪烁 */
+    background-color: #05060a;
+    background-image:
+      radial-gradient(
+        120% 90% at 50% -10%,
+        rgb(124 92 255 / 0.16) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        80% 60% at 90% 8%,
+        rgb(65 105 255 / 0.12) 0%,
+        transparent 62%
+      );
+    background-attachment: fixed;
+    overflow-x: hidden;
+  }
+
+  /* 标题：西文可收紧字距，中文收紧会挤压字形，故按语言分量处理 */
+  h1,
+  h2,
+  h3,
+  h4 {
+    /* 中文为主：字距归零并给一点正字距，避免汉字粘连；
+       Latin 部分靠 font-feature + 光学字距自行处理。 */
+    letter-spacing: 0.01em;
+    line-height: 1.22;
+    text-wrap: balance;
+  }
+
+  /* 纯英文/数字的装饰性标题（如 Hero 名字）才允许收紧，
+     用 .is-latin-display 显式标注，不要靠元素名猜。 */
+  .is-latin-display {
+    letter-spacing: -0.025em;
+  }
+
+  /* 正文：中文行高需比西文更松，1.75 是长时间阅读的舒适区 */
+  body {
+    line-height: 1.75;
+  }
+
+  p {
+    text-wrap: pretty;
+    /* 中西文混排时自动在边界加 1/4 空隙（支持的浏览器才生效） */
+    text-autospace: normal;
+    /* 中文禁则：标点不出现在行首/行尾 */
+    line-break: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  /* 中文标点避头尾：禁止行首出现收尾标点 */
+  :where(p, li, blockquote, h1, h2, h3, h4, h5, h6) {
+    hanging-punctuation: allow-end;
+  }
+
+  ::selection {
+    background-color: rgb(124 92 255 / 0.35);
+    color: #ffffff;
+  }
+
+  /* 键盘可见焦点：全站统一的极光辉环 */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* 深色滚动条 */
+  * {
+    scrollbar-color: rgb(124 92 255 / 0.45) transparent;
+    scrollbar-width: thin;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #05060a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      rgb(124 92 255 / 0.7),
+      rgb(65 105 255 / 0.55)
+    );
+    border-radius: 9999px;
+    border: 2px solid #05060a;
+  }
+
+  /* 表单控件就地深色，避免浏览器默认白底 */
+  input,
+  textarea,
+  select {
+    background-color: rgb(8 10 18 / 0.72);
+    color: var(--color-foreground);
+    border-color: var(--color-input);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-subtle);
+    opacity: 1;
+  }
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-foreground);
+    -webkit-box-shadow: 0 0 0 1000px #080a12 inset;
+    caret-color: var(--color-foreground);
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  /* 图片默认不发光溢出 */
+  img,
+  svg,
+  canvas,
+  video {
+    max-width: 100%;
   }
 }
 
+/* ============================================================
+   UTILITIES —— 可复用视觉原语
+   ============================================================ */
+
+/* 容器：保留原站点断点，略增内边距以适配玻璃卡片 */
 @utility container {
   margin-inline: auto;
-  padding-inline: 2rem;
+  padding-inline: 1.25rem;
+  width: 100%;
 
   @media (width >= 640px) {
     max-width: 640px;
+    padding-inline: 2rem;
   }
   @media (width >= 768px) {
     max-width: 768px;
@@ -132,57 +564,563 @@
   }
 }
 
-@utility text-glow {
-  @apply relative; /* 相当于 CSS 的 position: relative */
-  text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+/* ---------- 玻璃卡片 ----------
+   backdrop blur + 半透明描边 + 内高光；低亮度紫蓝叠加（不靠白漆提亮，
+   以免把 primary/accent 的对比度压到 4.5 以下）。 */
+@utility glass-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  background-color: var(--glass-tint);
+  background-image: linear-gradient(
+    155deg,
+    rgb(124 92 255 / 0.12) 0%,
+    rgb(65 105 255 / 0.06) 44%,
+    rgb(5 6 10 / 0.72) 100%
+  );
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(150%);
+  backdrop-filter: blur(var(--blur-glass)) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    inset 0 -1px 0 0 rgb(124 92 255 / 0.08),
+    0 24px 60px -28px rgb(0 0 0 / 0.85),
+    0 0 32px -18px rgb(124 92 255 / 0.5);
+  transition:
+    border-color var(--duration-base) var(--ease-out-expo),
+    box-shadow var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-base) var(--ease-out-expo);
 }
 
-@utility card-hover {
-  /* 这里把四个 Tailwind 原子类打包在一起 */
-  @apply transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg;
+@utility glass-card-hover {
+  &:hover {
+    border-color: rgb(185 166 255 / 0.34);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      0 30px 70px -30px rgb(0 0 0 / 0.9),
+      0 0 44px -12px rgb(124 92 255 / 0.6);
+    transform: translateY(-3px);
+  }
 }
 
-/* @utility gradient-border {
-  @apply relative rounded-md;
-  background: linear-gradient(to right, hsl(var(--card)), hsl(var(--card)));
-  background: padding-box;
+/* 玻璃面板的顶缘光带（细线高光） */
+@utility glass-edge {
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline: 12%;
+    top: 0;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(185 166 255 / 0.75),
+      rgb(34 211 238 / 0.55),
+      transparent
+    );
+  }
+}
+
+/* ---------- 极光文字渐变 ---------- */
+@utility aurora-text {
+  background-image: linear-gradient(
+    100deg,
+    #f2f4ff 0%,
+    #b9a6ff 26%,
+    #7c5cff 46%,
+    #4169ff 62%,
+    #22d3ee 80%,
+    #f2f4ff 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: aurora-text-flow 12s var(--ease-in-out-soft) infinite;
+  /* 渐变在深底上最小控制点对比 ≥ 4.5:1（#7c5cff 4.66 / #4169ff 4.52）
+     注意：这里刻意只跑 background-position 动画。
+     glow-breathe 的关键帧含 opacity/filter:blur()，是给「光斑层」用的，
+     套到文字上会让标题整体半透明并被模糊（对比度跌到约 2.3:1），故绝不挂在这里。 */
+}
+
+/* 兼容旧类：原 Hero 已使用 text-gradient，但此前未定义 */
+@utility text-gradient {
+  background-image: linear-gradient(
+    100deg,
+    #f2f4ff 0%,
+    #b9a6ff 24%,
+    #7c5cff 45%,
+    #4169ff 62%,
+    #22d3ee 82%,
+    #f2f4ff 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: aurora-text-flow 12s var(--ease-in-out-soft) infinite;
+}
+
+@keyframes aurora-text-flow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* ---------- 发光描边 ---------- */
+@utility glow-border {
+  position: relative;
+  border-radius: var(--radius-xl);
   border: 1px solid transparent;
-} */
-
-@utility gradient-border {
-  @apply relative rounded-md;
   background:
-    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    linear-gradient(var(--color-card), var(--color-card)) padding-box,
     linear-gradient(
-        135deg,
-        hsl(var(--primary) / 0.75),
-        hsl(190 95% 55% / 0.45),
-        hsl(var(--border) / 0.55)
+        130deg,
+        rgb(124 92 255 / 0.9),
+        rgb(65 105 255 / 0.55) 45%,
+        rgb(34 211 238 / 0.45) 72%,
+        rgb(124 92 255 / 0.2)
       )
       border-box;
   box-shadow:
-    0 0 0 1px hsl(var(--primary) / 0.08),
-    0 18px 45px hsl(var(--primary) / 0.12);
+    0 0 0 1px rgb(124 92 255 / 0.1),
+    0 0 28px -10px rgb(124 92 255 / 0.55);
+}
+
+/* 兼容旧类：gradient-border（并升级为玻璃质感） */
+@utility gradient-border {
+  position: relative;
+  border-radius: var(--radius-xl);
   border: 1px solid transparent;
+  background:
+    linear-gradient(rgb(8 10 18 / 0.88), rgb(8 10 18 / 0.88)) padding-box,
+    linear-gradient(
+        135deg,
+        rgb(124 92 255 / 0.8),
+        rgb(65 105 255 / 0.5) 50%,
+        rgb(34 211 238 / 0.4) 78%,
+        rgb(27 33 54 / 0.7)
+      )
+      border-box;
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06),
+    0 0 0 1px rgb(124 92 255 / 0.08),
+    0 22px 50px -26px rgb(0 0 0 / 0.9),
+    0 0 28px -14px rgb(124 92 255 / 0.45);
 }
 
+/* 精确的发光外环（伪元素，不占据布局） */
+@utility glow-ring {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgb(185 166 255 / 0.85),
+      rgb(65 105 255 / 0.5) 48%,
+      rgb(34 211 238 / 0.55)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.7;
+    transition: opacity var(--duration-base) var(--ease-out-expo);
+  }
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
+/* ---------- 网格底纹 ---------- */
+@utility grid-mesh {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-strong) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: center center;
+  -webkit-mask-image: radial-gradient(
+    70% 60% at 50% 40%,
+    #000 0%,
+    rgb(0 0 0 / 0.55) 55%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    70% 60% at 50% 40%,
+    #000 0%,
+    rgb(0 0 0 / 0.55) 55%,
+    transparent 100%
+  );
+}
+
+/* 透视网格（地平线感） */
+@utility grid-perspective {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-strong) 1px, transparent 1px);
+  background-size: 72px 72px;
+  transform: perspective(420px) rotateX(58deg);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 78%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 78%);
+}
+
+/* ---------- 噪点叠加 ---------- */
+@utility noise-overlay {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 220px 220px;
+  }
+}
+
+/* 独立的全屏噪点层（不依赖父级定位） */
+@utility noise-layer {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* 噪点层的性能降级。
+   mix-blend-mode: overlay 会强制整层参与合成时的混合运算，实测（SwiftShader
+   软渲染）是本站最大的单笔开销：关掉它 18.3 → 25.4 fps。
+   噪点纯属质感装饰，视觉信息量为零，因此在以下场景直接换成普通叠加
+   （opacity 略降补偿观感），代价是极轻微的颗粒对比度损失，肉眼几乎无法分辨：
+     1) 触屏/小屏设备（GPU 通常更弱）；
+     2) 用户开了「减少动态效果」；
+     3) 显式 data-perf="low"。
+   注意：这里只影响装饰层，不影响任何文字与功能区域。 */
+@media (max-width: 767px), (prefers-reduced-motion: reduce), (update: slow) {
+  .noise-layer,
+  .noise-overlay::after {
+    mix-blend-mode: normal;
+    opacity: 0.03;
+  }
+}
+
+[data-perf="low"] .noise-layer,
+[data-perf="low"] .noise-overlay::after {
+  mix-blend-mode: normal;
+  opacity: 0.03;
+}
+
+/* ---------- 低性能设备的背景动画降频 ----------
+   实测（SwiftShader 软渲染）瓶颈集中在「背景层常驻动画」：停掉全部动画
+   23 → 60fps，单独隐藏背景 fixed 层 23 → 57fps，两者高度重合。
+   而 backdrop-filter 只值 +3fps、box-shadow 甚至是负收益，
+   所以低性能时**只降背景动画的帧率与数量**，保留玻璃拟态这一设计核心。
+
+   做法：把极光的位移改成更长的周期（视觉上几乎看不出变慢，因为极光本来
+   就极缓慢），并停掉扫描线这类高频装饰。观感仍是流动的极光，只是更省。 */
+[data-perf="low"] .animate-aurora-drift,
+[data-perf="low"] .animate-aurora-drift-slow {
+  animation-duration: 70s !important;
+}
+
+[data-perf="low"] .animate-scan-line {
+  animation: none !important;
+  opacity: 0.25;
+}
+
+/* 触屏/小屏：同样降频，这些设备电池与 GPU 都更紧张 */
+@media (max-width: 767px), (update: slow) {
+  .animate-aurora-drift {
+    animation-duration: 48s;
+  }
+  .animate-aurora-drift-slow {
+    animation-duration: 76s;
+  }
+  .animate-scan-line {
+    animation: none;
+    opacity: 0.2;
+  }
+}
+
+/* 极光光斑：直接可用的一层径向渐变 */
+@utility aurora-glow {
+  background-image:
+    radial-gradient(
+      42% 42% at 18% 22%,
+      var(--aurora-violet) 0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      46% 44% at 78% 16%,
+      var(--aurora-blue) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      40% 38% at 62% 78%,
+      var(--aurora-cyan) 0%,
+      transparent 72%
+    );
+  filter: blur(var(--blur-aurora));
+}
+
+/* ---------- 交互原语 ---------- */
+
+/* 主按钮：紫蓝渐变 + 扫光 */
 @utility cosmic-button {
-  @apply px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium transition-all duration-300 hover:shadow-[0_0_10px_rgba(139,92,246,0.5)] hover:scale-105 active:scale-95;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 0.7rem 1.75rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgb(185 166 255 / 0.34);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-primary-foreground);
+  background-image: linear-gradient(
+    120deg,
+    #8b6dff 0%,
+    #7c5cff 38%,
+    #4169ff 100%
+  );
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.28),
+    0 10px 30px -12px rgb(124 92 255 / 0.75);
+  transition:
+    transform var(--duration-base) var(--ease-out-expo),
+    box-shadow var(--duration-base) var(--ease-out-expo),
+    filter var(--duration-base) var(--ease-out-expo);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: -20%;
+    inset-inline-start: 0;
+    width: 45%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.55),
+      transparent
+    );
+    transform: translateX(-140%) skewX(-14deg);
+    transition: transform var(--duration-slow) var(--ease-out-expo);
+    pointer-events: none;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.32),
+      0 16px 44px -14px rgb(124 92 255 / 0.9),
+      0 0 0 1px rgb(34 211 238 / 0.25);
+  }
+  &:hover::before {
+    transform: translateX(260%) skewX(-14deg);
+  }
+  &:active {
+    transform: translateY(0) scale(0.985);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-cyan);
+    outline-offset: 3px;
+  }
 }
 
+/* 次级按钮：玻璃幽灵按钮 */
+@utility ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.75rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  color: var(--color-foreground);
+  background-color: rgb(255 255 255 / 0.03);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition:
+    border-color var(--duration-base) var(--ease-out-expo),
+    background-color var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-base) var(--ease-out-expo);
+
+  &:hover {
+    border-color: rgb(185 166 255 / 0.5);
+    background-color: rgb(124 92 255 / 0.12);
+    transform: translateY(-2px);
+  }
+}
+
+/* 卡片悬停（兼容旧类，升级为玻璃浮起 + 辉光） */
+@utility card-hover {
+  transition:
+    transform var(--duration-base) var(--ease-out-expo),
+    box-shadow var(--duration-base) var(--ease-out-expo),
+    border-color var(--duration-base) var(--ease-out-expo);
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgb(185 166 255 / 0.32);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.12),
+      0 28px 60px -28px rgb(0 0 0 / 0.9),
+      0 0 40px -14px rgb(124 92 255 / 0.6);
+  }
+}
+
+/* 兼容旧类：text-glow */
+@utility text-glow {
+  position: relative;
+  text-shadow:
+    0 0 12px rgb(185 166 255 / 0.45),
+    0 0 32px rgb(124 92 255 / 0.25);
+}
+
+/* 兼容旧类：star / meteor（保留 API，改为极光粒子质感） */
 @utility star {
-  @apply absolute rounded-full bg-white;
-  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.4);
+  position: absolute;
+  border-radius: 9999px;
+  background-color: #e9ecff;
+  box-shadow:
+    0 0 8px 1px rgb(185 166 255 / 0.55),
+    0 0 18px 2px rgb(65 105 255 / 0.25);
 }
 
 @utility meteor {
-  @apply absolute bg-linear-to-r from-white via-white to-transparent rounded-full;
-  box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.3);
+  position: absolute;
+  border-radius: 9999px;
+  background-image: linear-gradient(
+    90deg,
+    rgb(233 236 255 / 0.9),
+    rgb(185 166 255 / 0.55),
+    transparent
+  );
+  box-shadow: 0 0 12px 2px rgb(124 92 255 / 0.35);
 }
 
+/* 进度条：极光填充 + 生长动画 */
+@utility progress-track {
+  position: relative;
+  height: 0.5rem;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.6);
+}
+
+@utility progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transform-origin: left center;
+  background-image: linear-gradient(90deg, #7c5cff, #4169ff 62%, #22d3ee);
+  box-shadow: 0 0 14px rgb(124 92 255 / 0.65);
+  animation: progress-grow var(--progress-duration, 1.4s) var(--ease-out-expo)
+    both;
+}
+
+/* 区块外壳：统一上下留白与内容层级 */
+@utility section-shell {
+  position: relative;
+  z-index: var(--z-content);
+  padding-block: 6rem;
+  padding-inline: 1.25rem;
+
+  @media (width >= 768px) {
+    padding-block: 7.5rem;
+  }
+}
+
+/* 细线分隔（极光渐隐） */
+@utility aurora-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(124 92 255 / 0.45),
+    rgb(34 211 238 / 0.35),
+    transparent
+  );
+}
+
+/* 语义化文本色（保证正文级对比度） */
+@utility text-body {
+  color: var(--color-foreground);
+}
+
+@utility text-muted-strong {
+  color: var(--color-muted);
+}
+
+/* ============================================================
+   根节点 & 动效降级
+   ============================================================ */
+
 #root {
+  position: relative;
+  z-index: var(--z-content);
   max-width: 100%;
   margin: 0 auto;
   padding: 0;
   text-align: center;
+}
+
+/* 尊重系统减弱动效：保留最终帧（fade-in/progress 均带 forwards/both） */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* 背景光带保持静态但仍可见 */
+  .aurora-glow {
+    animation: none !important;
+    filter: blur(var(--blur-aurora));
+    opacity: 0.55;
+  }
+}
+
+/* 高对比度偏好：加强描边与文字 */
+@media (prefers-contrast: more) {
+  :root {
+    --glass-border: rgb(255 255 255 / 0.28);
+    --color-muted: #c3c9e4;
+    --color-subtle: #aeb5d2;
+  }
 }

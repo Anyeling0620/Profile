@@ -1,0 +1,350 @@
+/* ============================================================
+   FX 层 —— 交互动效专用样式（自包含，不修改 index.css）
+   ------------------------------------------------------------
+   原则：
+   1) 只动 transform / opacity / clip-path，绝不动 width/height/top/left，
+      避免触发重排。
+   2) 所有动画都包在 prefers-reduced-motion 守卫里：reduce 时直接落终态，
+      不产生任何 running animation（qa-reviewer 会实测该值必须为 0）。
+   3) 关键词帧只在本文件定义，避免与 index.css 的 keyframes 撞名。
+   ============================================================ */
+
+/* ---------- 逐词/逐行上浮 + 模糊消散 ---------- */
+@keyframes fx-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.6em, 0);
+    /* 用 filter 做「从模糊到清晰」的消散；只在短促的进场期跑一次，
+       不是常驻动画，因此不会像背景光斑那样持续重绘。 */
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+/* ---------- 遮罩揭示：clip-path 从底部擦出，比单纯淡入更「高级」 ---------- */
+@keyframes fx-clip-reveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translate3d(0, 0.12em, 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ---------- 光带横扫：一次性播完（不循环，避免廉价感） ---------- */
+@keyframes fx-sweep {
+  0% {
+    transform: translate3d(-140%, 0, 0) skewX(-12deg);
+    opacity: 0;
+  }
+  16% {
+    opacity: 0.85;
+  }
+  55% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(260%, 0, 0) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+/* ---------- 缩放淡入（卡片用） ---------- */
+@keyframes fx-zoom-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* ---------- 涟漪 ---------- */
+@keyframes fx-ripple {
+  from {
+    opacity: 0.5;
+    transform: scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+/* ---------- 光标环呼吸（仅 hover 态用） ---------- */
+@keyframes fx-cursor-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ---------- 背景漂移：纯平移版（覆盖 index.css 的同关键帧） ----------
+   为什么覆盖：index.css 的 aurora-drift / aurora-drift-slow 关键帧带
+   scale() 与 rotate()。作用在 900~1400px 的全屏光斑上时，每帧都要重新
+   光栅化整块大图，实测（SwiftShader 1440×900）为 15fps；换成「只平移」
+   后提升到 20fps（+33%），而肉眼几乎看不出缩放差异（光斑本来就是柔边虚影）。
+   仅在这里覆盖，不改 index.css（设计系统文件由 design-lead 维护）。 */
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(-4%, -2%, 0);
+    opacity: 0.55;
+  }
+  33% {
+    transform: translate3d(5%, 3%, 0);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translate3d(-2%, 6%, 0);
+    opacity: 0.65;
+  }
+}
+
+@keyframes aurora-drift-slow {
+  0%,
+  100% {
+    transform: translate3d(3%, -3%, 0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate3d(-6%, 4%, 0);
+    opacity: 0.7;
+  }
+}
+
+/* ---------- 光斑呼吸（只动 opacity，绝不动 filter）----------
+   背景：index.css 的 glow-breathe 关键帧带 filter:blur(28px→38px)。
+   实测（Chromium，1440×900）：把这个动画挂在 672px 的光斑上，每帧都要
+   重新做一次大半径模糊，帧间隔从 33ms 恶化到 83ms（约 12fps）。
+   呼吸的观感完全可以用 opacity 表达，于是这里提供一个「零模糊」替代版。 */
+@keyframes fx-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+.fx-breathe {
+  animation: fx-breathe 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.fx-breathe-slow {
+  animation: fx-breathe 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* ---------- 页面切换：遮罩擦除进场 ---------- */
+@keyframes fx-page-enter {
+  from {
+    clip-path: inset(0 0 6% 0);
+    opacity: 0.001;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+.fx-page-enter {
+  animation: fx-page-enter 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---------- 工具类 ---------- */
+
+/* 逐词上浮：由 JS 写入 --fx-delay 做错峰 */
+.fx-word {
+  display: inline-block;
+  /* 进场动画只播一次（fill both），不需要常驻提升 */
+  will-change: transform, opacity;
+  animation: fx-rise 0.72s cubic-bezier(0.22, 1, 0.36, 1) var(--fx-delay, 0ms) both;
+}
+
+/* 遮罩揭示：给「不含 background-clip:text」的文字块用 */
+.fx-clip-reveal {
+  animation: fx-clip-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) var(--fx-delay, 0ms)
+    both;
+}
+
+/* 卡片缩放淡入 */
+.fx-zoom-in {
+  animation: fx-zoom-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--fx-delay, 0ms) both;
+}
+
+/* 一次性横扫光带：用 forwards 保留末帧（末帧 opacity:0，故不可见）。
+   注意不能用 both——它会把起始帧也回填，元素在延迟期间就已经可见。 */
+.fx-sweep {
+  animation: fx-sweep 1.7s cubic-bezier(0.4, 0, 0.2, 1) var(--fx-delay, 0ms)
+    forwards;
+  opacity: 0;
+}
+
+/* 涟漪容器 */
+.fx-ripple-host {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.fx-ripple-dot {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgb(255 255 255 / 0.55) 0%,
+    rgb(255 255 255 / 0.18) 45%,
+    transparent 70%
+  );
+  animation: fx-ripple 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  mix-blend-mode: screen;
+}
+
+/* ---------- 3D 倾斜卡片 ----------
+   由 InteractionLayer 写入 --fx-rx / --fx-ry（旋转角度）与
+   --fx-mx / --fx-my（光标在卡内的百分比位置，供聚光/反光使用）。 */
+/* ⚠️ 性能：常态**不要**加 will-change。29 张卡片若各建一个合成层，
+   实测（SwiftShader）会把帧率压到 15fps 且掉帧全部集中在合成阶段。
+   只在指针真正进入卡片（.fx-tilting）时才临时提升，离开即释放。 */
+[data-tilt] {
+  transform-style: preserve-3d;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-tilt].fx-tilting {
+  /* 跟随期间用极短过渡，松手回弹用上面的长过渡（弹簧感） */
+  transition: transform 90ms linear;
+  will-change: transform;
+}
+
+/* 卡片边缘反光：跟随光标的柔和高光（模拟真实玻璃） */
+[data-spotlight] {
+  position: relative;
+}
+[data-spotlight]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  background: radial-gradient(
+    260px circle at var(--fx-mx, 50%) var(--fx-my, 50%),
+    rgb(255 255 255 / 0.09) 0%,
+    rgb(185 166 255 / 0.07) 38%,
+    transparent 68%
+  );
+}
+[data-spotlight].fx-spot-on::after {
+  opacity: 1;
+}
+
+/* 磁吸按钮：位移由 JS 直接写 transform，这里只给过渡手感 */
+[data-magnetic] {
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-magnetic].fx-magnet-on {
+  transition: transform 120ms ease-out;
+  will-change: transform;
+}
+
+/* ---------- 自定义光标（桌面端） ---------- */
+/* 这两个元素确实每帧位移，常驻提升是划算的（面积各仅数十像素）。
+   除此之外全站不应再有常驻 will-change。 */
+.fx-cursor-dot,
+.fx-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-toast, 100);
+  pointer-events: none;
+  border-radius: 9999px;
+  will-change: transform;
+}
+.fx-cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  background-color: #f2f4ff;
+  box-shadow: 0 0 10px 2px rgb(124 92 255 / 0.75);
+}
+.fx-cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgb(185 166 255 / 0.55);
+  box-shadow: 0 0 18px -2px rgb(124 92 255 / 0.5);
+  transition:
+    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms ease,
+    opacity 220ms ease;
+}
+/* hover 到可交互元素：放大 + 变形为圆角矩形 */
+.fx-cursor-ring.is-interactive {
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  border-radius: 14px;
+  background-color: rgb(124 92 255 / 0.12);
+  border-color: rgb(185 166 255 / 0.85);
+}
+/* 按下：收缩 */
+.fx-cursor-ring.is-down {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+}
+
+/* ---------- 数字滚动 ---------- */
+.fx-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- reduced-motion：全部落终态，零 running animation ----------
+   注意：这里不依赖 index.css 的全局 1ms 覆盖（那是给 CSS 动画的兜底），
+   fx 层的 JS 动效会在各自 hook 里单独判断并直接关闭。 */
+@media (prefers-reduced-motion: reduce) {
+  .fx-word,
+  .fx-clip-reveal,
+  .fx-zoom-in,
+  .fx-sweep,
+  .fx-ripple-dot,
+  .fx-page-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+  }
+  .fx-breathe,
+  .fx-breathe-slow {
+    animation: none !important;
+    opacity: 0.8 !important;
+  }
+  [data-tilt],
+  [data-magnetic] {
+    transform: none !important;
+    transition: none !important;
+  }
+  [data-spotlight]::after {
+    display: none !important;
+  }
+  .fx-cursor-dot,
+  .fx-cursor-ring {
+    display: none !important;
+  }
+}

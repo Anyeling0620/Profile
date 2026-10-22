@@ -66,7 +66,7 @@ function ToastClose({ className, ...props }) {
 function ToastTitle({ className, ...props }) {
   return (
     <ToastPrimitive.Title
-      className={cn("text-lg font-semibold", className)}
+      className={cn("text-lg font-bold", className)}
       {...props}
     />
   );
