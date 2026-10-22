@@ -407,7 +407,7 @@ export default function Navbar() {
               github.com/Anyeling0620
             </a>
             <p className="text-center text-[0.68rem] tracking-[0.2em] text-subtle">
-              KUANG ZIHAO · FRONTEND
+              KUANG ZIHAO · FULLSTACK
             </p>
           </div>
         </div>

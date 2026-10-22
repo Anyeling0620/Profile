@@ -1,15 +1,15 @@
-import { ArrowUpRight, Briefcase, Code2, Layers } from "lucide-react";
+import { ArrowUpRight, Code2, Layers, Server } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useInView } from "./fx/useMotionPrefs";
 import TiltCard from "./fx/TiltCard";
 
-/* 三张能力卡：标题与描述保留原有文案 */
+/* 三张能力卡：覆盖前端 / 界面体验 / 后端服务，体现全栈定位 */
 const capabilities = [
   {
     icon: Code2,
-    title: "网页开发",
-    description: "使用现代框架构建响应式网站和网页应用。",
-    tags: ["React", "响应式", "工程化"],
+    title: "前端开发",
+    description: "使用现代框架构建响应式网站和网页应用，注重交互细节与性能。",
+    tags: ["React", "TypeScript", "Tailwind"],
     surface: "from-[#7c5cff]/26 to-[#4169ff]/[0.06]",
     glow: "124 92 255",
   },
@@ -22,10 +22,11 @@ const capabilities = [
     glow: "65 105 255",
   },
   {
-    icon: Briefcase,
-    title: "项目推进",
-    description: "从想法到上线持续推进项目，保持节奏清晰、交付可靠。",
-    tags: ["协作", "节奏", "交付"],
+    icon: Server,
+    title: "后端与全栈服务",
+    description:
+      "用 Go 与 Java 双栈构建服务端：Spring Boot 业务服务、接口设计与数据库建模，配合缓存与消息队列支撑高并发。",
+    tags: ["Go", "Java", "Spring Boot", "MySQL", "Redis"],
     surface: "from-[#22d3ee]/[0.22] to-[#7c5cff]/[0.06]",
     glow: "34 211 238",
   },
@@ -67,9 +68,12 @@ export default function AboutSection() {
           </div>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
-          {/* 左列：介绍卡 + 关注点 */}
-          <div className="flex flex-col gap-6">
+        {/* items-stretch：左右两栏等高。
+           左栏内容通常比右侧三张能力卡少，所以左栏内部用 justify-center
+           垂直居中，避免矮一截、下方留大片空白。 */}
+        <div className="mt-14 grid grid-cols-1 items-stretch gap-8 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
+          {/* 左列：介绍卡 + 关注点，整体在行内垂直居中 */}
+          <div className="flex flex-col justify-center gap-6">
             <div
               className={cn(
                 "glass-card glass-edge relative overflow-hidden p-7 sm:p-9",
@@ -83,14 +87,17 @@ export default function AboutSection() {
               />
               <h3 className="relative text-xl font-bold leading-snug text-foreground sm:text-2xl">
                 热爱创造的
-                <span className="text-primary-soft">网页开发者</span>
+                <span className="text-primary-soft">全栈开发者</span>
                 与<span className="text-accent-soft">技术创作者</span>
               </h3>
               <p className="relative mt-4 text-sm leading-relaxed text-muted sm:text-base">
-                我关注前端体验、交互细节和工程质量，喜欢把想法打磨成清晰、可靠、好用的产品。
+                我从界面到服务端打通整条链路：前端关注体验、交互细节与工程质量，
+                后端用 Go 与 Java 生态（Spring Boot、MySQL、Redis、消息队列）构建稳定服务，
+                喜欢把想法打磨成清晰、可靠、好用的产品。
               </p>
 
-              <div className="relative mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* 按钮组：水平居中（原先靠左）。移动端纵向排列时也居中。 */}
+              <div className="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <a href="#contact" className="cosmic-button group text-sm">
                   联系我
                   <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

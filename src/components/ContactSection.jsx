@@ -100,9 +100,11 @@ export default function ContactSection() {
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
+        {/* items-stretch：左右两栏等高；左栏（联系方式 + 社交）内容较少，
+            内部 justify-center 做垂直居中，与右侧表单卡对齐观感。 */}
+        <div className="mt-14 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
           {/* 左：联系方式 + 社交 */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col justify-center gap-6">
             <div className="glass-card glass-edge p-6 sm:p-8">
               <h3 className="text-lg font-bold text-foreground sm:text-xl">联系方式</h3>
 

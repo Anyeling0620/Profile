@@ -33,8 +33,12 @@ export default function Footer() {
       />
 
       <div className="glass-card glass-edge noise-overlay mx-auto flex max-w-6xl flex-col gap-5 rounded-2xl px-5 py-6 sm:px-8">
-        {/* 上排：品牌 + 快捷入口 */}
-        <div className="flex flex-col items-center justify-between gap-5 sm:flex-row">
+        {/* 上排：品牌 ↔ 按钮两端对齐；导航单独一层绝对居中。
+            原先三项都放进 justify-between，导航会被左右两块「挤」到偏右，
+            不是真正居中（左右宽度不等）。现在导航用绝对定位 + translate
+            钉在容器中线，与两侧块宽度无关。
+            移动端（<sm）改为纵向堆叠，导航回到正常流，不做绝对居中。 */}
+        <div className="relative flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center gap-1.5 sm:items-start">
             <span className="flex items-center gap-2 text-sm font-bold tracking-tight text-foreground">
               <span
@@ -46,11 +50,14 @@ export default function Footer() {
               Kuang Zihao
             </span>
             <span className="text-[0.68rem] tracking-[0.22em] text-subtle">
-              FRONTEND · 用心构建界面
+              FULLSTACK · 用心构建产品
             </span>
           </div>
 
-          <nav aria-label="页脚导航" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          <nav
+            aria-label="页脚导航"
+            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2"
+          >
             <a
               href="#hero"
               className="text-xs text-muted transition-colors duration-300 hover:text-primary-soft"

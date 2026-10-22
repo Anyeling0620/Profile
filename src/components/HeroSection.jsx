@@ -22,11 +22,11 @@ function GithubMark({ className }) {
 
 /* 定位文案：保留原意，仅做排版切分 */
 const POSITIONING =
-  "我使用现代技术打造出色的网页体验，专注于前端开发，构建兼具美感与实用性的界面。";
+  "我使用现代技术打造出色的网页体验，覆盖从界面到服务端的完整链路，构建兼具美感、性能与可靠性的全栈产品。";
 
 const HIGHLIGHTS = [
-  { label: "专注", value: "前端开发" },
-  { label: "取向", value: "美感 × 实用" },
+  { label: "定位", value: "全栈开发" },
+  { label: "技术栈", value: "React · Go · Java" },
   { label: "位置", value: "中国，山东" },
 ];
 
@@ -153,7 +153,7 @@ export default function HeroSection() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan opacity-70" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
                 </span>
-                可接受新的合作 · 前端开发
+                可接受新的合作 · 全栈开发
               </span>
             </div>
           </div>
@@ -173,8 +173,12 @@ export default function HeroSection() {
               （此前用双层叠加会留下 1px 亚像素重影，已修掉）。
               唯一安全且仍有「逐词揭示」手感的做法：单个 aurora-text 容器，
               子 span 只做 clip-path 揭示（clip-path 不影响背景切片的绘制）。
-              读屏只念一次：容器 aria-hidden，sr-only 提供完整文本。 */}
-          <h1 className="mt-3 text-[clamp(2.6rem,9vw,5.6rem)] font-black leading-[0.98] tracking-[-0.035em]">
+              读屏只念一次：容器 aria-hidden，sr-only 提供完整文本。
+
+              间距说明：leading-[0.98] 会压掉行框上下留白，大字号的字形上缘
+              （尤其 Latin 大写与中文混排）容易顶到上一行的 "HELLO, I'M"。
+              因此这里给足 mt（移动端略小），并在下方 subtitle 也留出对应间距。 */}
+          <h1 className="mt-6 text-[clamp(2.6rem,9vw,5.6rem)] font-black leading-[1.02] tracking-[-0.035em] sm:mt-7 lg:mt-8">
             <span className="sr-only">{NAME}</span>
             <span
               aria-hidden="true"
@@ -194,7 +198,7 @@ export default function HeroSection() {
 
           {/* 副标题 */}
           <div
-            className="mt-5 flex animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none items-center gap-3 text-sm text-muted sm:text-base"
+            className="mt-6 flex animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none items-center gap-3 text-sm text-muted sm:mt-7 sm:text-base"
             style={{ animationDelay: "640ms" }}
           >
             <span
@@ -202,7 +206,7 @@ export default function HeroSection() {
               className="h-px w-8 bg-gradient-to-r from-transparent to-primary-soft/70"
             />
             <span className="font-medium tracking-[0.18em] text-foreground/90">
-              前端开发工程师
+              全栈开发工程师
             </span>
             <span
               aria-hidden="true"

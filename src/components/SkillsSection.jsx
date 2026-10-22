@@ -5,7 +5,9 @@ import { useInView } from "./fx/useMotionPrefs";
 import CountUp from "./fx/CountUp";
 import TiltCard from "./fx/TiltCard";
 
-/* ---------------- 技能数据：全部保留，不增不减 ---------------- */
+/* ---------------- 技能数据 ----------------
+   在原有基础上补入 Java 生态（全栈方向的另一半），
+   分类仍沿用 frontend / backend / tools / aiCoding 四组。 */
 const skills = [
   // Frontend
   { name: "HTML/CSS", level: 90, category: "frontend" },
@@ -14,7 +16,7 @@ const skills = [
   { name: "Tailwind CSS", level: 90, category: "frontend" },
   { name: "Tanstack", level: 80, category: "frontend" },
   { name: "Taro", level: 80, category: "frontend" },
-  // backend
+  // Backend —— Go 栈
   { name: "Go", level: 90, category: "backend" },
   { name: "Gin", level: 90, category: "backend" },
   { name: "Gorm", level: 80, category: "backend" },
@@ -22,6 +24,14 @@ const skills = [
   { name: "Redis", level: 85, category: "backend" },
   { name: "Kafka", level: 85, category: "backend" },
   { name: "RocketMQ", level: 90, category: "backend" },
+  // Backend —— Java 生态
+  { name: "Java", level: 85, category: "backend" },
+  { name: "Spring Boot", level: 85, category: "backend" },
+  { name: "Spring Cloud", level: 75, category: "backend" },
+  { name: "MyBatis", level: 80, category: "backend" },
+  { name: "Maven", level: 85, category: "backend" },
+  { name: "MySQL", level: 85, category: "backend" },
+  { name: "JVM 调优", level: 70, category: "backend" },
   // Tools
   { name: "Git/GitHub/Gitea", level: 90, category: "tools" },
   { name: "Docker", level: 90, category: "tools" },
