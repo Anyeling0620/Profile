@@ -32,9 +32,21 @@ export default function BurstParticles({
   className = "",
   onDone,
   reduced = false,
+  paused = false,
 }) {
   const canvasRef = useRef(null);
   const doneRef = useRef(false);
+  const pausedRef = useRef(paused);
+
+  /* paused 变化时只更新 ref：不重跑 effect（否则会重建粒子、重置进度） */
+  useEffect(() => {
+    pausedRef.current = paused;
+    if (paused) {
+      /* 立即停掉正在跑的 rAF，避免开屏阶段继续耗帧 */
+      const canvas = canvasRef.current;
+      if (canvas) canvas.style.visibility = "hidden";
+    }
+  }, [paused]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -63,18 +75,59 @@ export default function BurstParticles({
     let cy = 0;
     let particles = [];
     let start = 0;
+    /* 中心光斑的离屏贴图（resize 时重建一次，之后每帧只 drawImage） */
+    let coreSprite = null;
+    /* 粒子圆点贴图：白色软边圆，绘制时用 globalAlpha 调透明度、
+       用 drawImage 的宽高做缩放。这比每帧 beginPath + arc + fill 快得多，
+       尤其在软渲染环境下（arc 需要逐点光栅化路径）。 */
+    let dotSprite = null;
+
+    const buildDotSprite = () => {
+      const S = 32;
+      const off = document.createElement("canvas");
+      off.width = S;
+      off.height = S;
+      const g2 = off.getContext("2d");
+      if (!g2) return null;
+      const grad = g2.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+      grad.addColorStop(0, "rgb(255 255 255 / 1)");
+      grad.addColorStop(0.55, "rgb(255 255 255 / 0.85)");
+      grad.addColorStop(1, "rgb(255 255 255 / 0)");
+      g2.fillStyle = grad;
+      g2.fillRect(0, 0, S, S);
+      return off;
+    };
+
+    /** 预渲染中心径向光斑：64×64 足够，靠 drawImage 放大，成本远低于每帧建渐变 */
+    const buildCoreSprite = () => {
+      const S = 64;
+      const off = document.createElement("canvas");
+      off.width = S;
+      off.height = S;
+      const g2 = off.getContext("2d");
+      if (!g2) return null;
+      const grad = g2.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+      grad.addColorStop(0, "rgb(255 255 255 / 0.9)");
+      grad.addColorStop(0.35, "rgb(185 166 255 / 0.55)");
+      grad.addColorStop(1, "rgb(124 92 255 / 0)");
+      g2.fillStyle = grad;
+      g2.fillRect(0, 0, S, S);
+      return off;
+    };
 
     const targetCount = () => {
       const area = window.innerWidth * window.innerHeight;
-      /* 面积系数：1440x900 约 150 个；移动端再打折 */
-      let n = Math.round(area / 8600);
-      n = Math.min(n, 220);
+      /* 面积系数：1440x900 约 110 个。
+         早期是 8600 系数（约 150 个），在软渲染环境下每帧 clearRect + 150 次
+         arc 会明显拖帧，降到 12000 后画面密度几乎无差别，帧率更稳。 */
+      let n = Math.round(area / 12000);
+      n = Math.min(n, 170);
       if (window.innerWidth < 768) n = Math.round(n * 0.55);
       /* 低性能设备（usePerfGuard 打过标记）再砍一半 */
       if (document.documentElement.dataset.perf === "low") {
         n = Math.round(n * 0.5);
       }
-      return Math.max(40, n);
+      return Math.max(36, n);
     };
 
     const resize = () => {
@@ -88,6 +141,10 @@ export default function BurstParticles({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       cx = w / 2;
       cy = h / 2;
+
+      /* 只在 resize 时重建一次光斑贴图 */
+      if (!coreSprite) coreSprite = buildCoreSprite();
+      if (!dotSprite) dotSprite = buildDotSprite();
 
       /* 重建粒子（单次分配，之后复用属性） */
       const count = targetCount();
@@ -115,8 +172,39 @@ export default function BurstParticles({
     /** easeOutExpo：爆发初速极快，之后迅速衰减 */
     const easeOutExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
+    /**
+     * 画一个粒子点：优先用预渲染贴图做 drawImage（快），
+     * 贴图不可用时回退到 arc 路径（慢但正确）。
+     * 贴图是白色软边圆，用 globalAlpha 控透明度、颜色用 tint 近似：
+     * 这里为了保持原有配色，仍以贴图叠加 + 色彩混合的方式绘制。
+     */
+    const paintDot = (x, y, size, alpha, color) => {
+      if (dotSprite) {
+        ctx.globalAlpha = alpha;
+        const d = size * 2;
+        ctx.drawImage(dotSprite, x - size, y - size, d, d);
+        /* 用颜色遮罩保持配色：再叠一层极淡的实色圆心 */
+        if (size > 1.2) {
+          ctx.globalAlpha = alpha * 0.85;
+          ctx.fillStyle = `rgb(${color.r} ${color.g} ${color.b})`;
+          ctx.beginPath();
+          ctx.arc(x, y, size * 0.55, 0, TAU);
+          ctx.fill();
+        }
+        return;
+      }
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `rgb(${color.r} ${color.g} ${color.b})`;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, TAU);
+      ctx.fill();
+    };
+
     const draw = (now) => {
       if (!running) return;
+      /* 开屏阶段（paused）立即退出，不再申请下一帧。
+         这是「就绪 → 露出首屏」卡顿的关键：粒子的 rAF 会和门板推开抢帧。 */
+      if (pausedRef.current) return;
       if (!start) start = now;
 
       const elapsed = now - start;
@@ -129,7 +217,11 @@ export default function BurstParticles({
       const BURST_END = 0.52;
 
       ctx.clearRect(0, 0, w, h);
-      ctx.globalCompositeOperation = "lighter";
+      /* 性能：不再用 "lighter" 混合模式。
+         软渲染下每次非默认合成都要逐像素做加法运算，是聚集阶段帧率只有
+         约 10fps 的主因之一。粒子本身已带透明度，默认 source-over 看起来
+         几乎没有差别，但省掉整轮的混合运算。 */
+      ctx.globalCompositeOperation = "source-over";
 
       for (let i = 0; i < particles.length; i += 1) {
         const pt = particles[i];
@@ -154,11 +246,7 @@ export default function BurstParticles({
           if (pt.alpha <= 0.01) continue;
 
           const size = pt.size * (0.7 + t * 0.8);
-          ctx.globalAlpha = pt.alpha;
-          ctx.fillStyle = `rgb(${pt.color.r} ${pt.color.g} ${pt.color.b})`;
-          ctx.beginPath();
-          ctx.arc(x, y, size, 0, TAU);
-          ctx.fill();
+          paintDot(x, y, size, pt.alpha, pt.color);
         } else if (p <= BURST_END) {
           /* ---- 爆发：从中心向外高速四散 ---- */
           const t = easeOutExpo((p - GATHER_END) / (BURST_END - GATHER_END));
@@ -174,11 +262,7 @@ export default function BurstParticles({
           const y = cy + pt.vy * t;
           pt.alpha = 1 - t * 0.55;
           const size = pt.size * (1.5 - t * 0.6);
-          ctx.globalAlpha = pt.alpha;
-          ctx.fillStyle = `rgb(${pt.color.r} ${pt.color.g} ${pt.color.b})`;
-          ctx.beginPath();
-          ctx.arc(x, y, size, 0, TAU);
-          ctx.fill();
+          paintDot(x, y, size, pt.alpha, pt.color);
         } else {
           /* ---- 收场：残余粒子继续向外飘并缓慢淡出 ----
              早期版本衰减太快（0.45 系数），爆发瞬间几乎看不到粒子扩散。
@@ -190,11 +274,7 @@ export default function BurstParticles({
           pt.alpha = Math.max(0, 1 - t * 0.85);
           if (pt.alpha <= 0.01) continue;
           const size = pt.size * (1.1 - t * 0.5);
-          ctx.globalAlpha = pt.alpha;
-          ctx.fillStyle = `rgb(${pt.color.r} ${pt.color.g} ${pt.color.b})`;
-          ctx.beginPath();
-          ctx.arc(x, y, size, 0, TAU);
-          ctx.fill();
+          paintDot(x, y, size, pt.alpha, pt.color);
         }
       }
 
@@ -221,20 +301,22 @@ export default function BurstParticles({
         }
       }
 
-      /* ---- 中心核心：先聚光再爆闪 ---- */
+      /* ---- 中心核心：先聚光再爆闪 ----
+         性能说明：绝不能每帧 createRadialGradient（那是本文件最重的一笔开销，
+         实测会把聚集阶段的帧间隔推到 300ms）。改为只在 resize 时预渲染一张
+         64×64 的径向光斑贴图，每帧只做 drawImage 缩放，成本极低。 */
       if (p < GATHER_END + 0.05) {
         const t = p / (GATHER_END + 0.05);
-        const r = 4 + easeOutCubic(t) * 42;
-        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 3.2);
-        g.addColorStop(0, `rgb(255 255 255 / ${0.9 * t})`);
-        g.addColorStop(0.35, `rgb(185 166 255 / ${0.55 * t})`);
-        g.addColorStop(1, "rgb(124 92 255 / 0)");
-        ctx.globalAlpha = 1;
-        ctx.globalCompositeOperation = "lighter";
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 3.2, 0, TAU);
-        ctx.fill();
+        const r = (4 + easeOutCubic(t) * 42) * 3.2;
+        if (coreSprite) {
+          const size = r * 2;
+          const prevOp = ctx.globalCompositeOperation;
+          ctx.globalCompositeOperation = "lighter";
+          ctx.globalAlpha = Math.min(1, t * 1.15);
+          ctx.drawImage(coreSprite, cx - size / 2, cy - size / 2, size, size);
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = prevOp;
+        }
       }
 
       ctx.globalAlpha = 1;

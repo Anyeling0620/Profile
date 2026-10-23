@@ -47,7 +47,7 @@ export default function IntroLoader({ duration = 1800, reduced = false, onFinish
       finishedRef.current = true;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setExiting(true);
-      const delay = immediate ? 0 : reduced ? 180 : 1080;
+      const delay = immediate ? 0 : reduced ? 180 : 980;
       window.setTimeout(() => onFinish?.(), delay);
     },
     [onFinish, reduced],
@@ -142,7 +142,11 @@ export default function IntroLoader({ duration = 1800, reduced = false, onFinish
 
       {/* ---------- 1 层：粒子冲击波 ---------- */}
       <div className="intro-canvas-wrap" aria-hidden="true">
-        {!reduced && <BurstParticles duration={duration} reduced={reduced} />}
+        {/* paused={exiting}：开屏（「就绪」→ 露出首屏）时立刻停掉粒子的 rAF。
+            否则它会和门板推开抢同一帧，正是用户反馈的展开卡顿来源。 */}
+        {!reduced && (
+          <BurstParticles duration={duration} reduced={reduced} paused={exiting} />
+        )}
       </div>
 
       {/* ---------- 2 层：中心内容 ---------- */}
@@ -249,12 +253,25 @@ export default function IntroLoader({ duration = 1800, reduced = false, onFinish
       </div>
 
       {/* ---------- 8 层：圆形扩散的光环 ----------
-          注意：真正的「开屏」动作是 .intro-root 上的 clip-path 圆形裁剪
-          （整层遮罩被裁成圆心在屏幕正中的圆，半径 0 → 覆盖全屏）。
-          这一层只负责圆的边缘光晕，必须放在遮罩内容的**最上层**，
-          否则会被 clip-path 一起裁掉、完全看不见。 */}
+          注意：真正的「开屏」动作是 4 块门板向外推开（见 .intro-shutter*），
+          这一层只叠一圈随扩张同步放大的描边，让圆心边缘有发光感。 */}
       <div className="intro-iris" aria-hidden="true">
         <span className="intro-iris-halo" />
+      </div>
+
+      {/* ---------- 9 层：开屏门板 ----------
+          性能关键：开屏动作**不能**再用 mask-image 径向渐变动画。
+          那会让浏览器每帧重算整屏的 alpha 蒙版，实测开屏阶段只有 8.7fps，
+          观感就是「一帧一帧地跳」。
+          改为 4 块面板各自动 transform 向外推开：
+          - 纯 transform 走合成层，GPU 直接出图，不重算任何像素；
+          - 四块拼起来正好覆盖全屏，向各自方向平移后中间自然露出页面。
+          data-exiting 时由 CSS 触发，使用 will-change 提前提升为合成层。 */}
+      <div className="intro-shutter" aria-hidden="true">
+        <span className="intro-shutter-panel intro-shutter-top" />
+        <span className="intro-shutter-panel intro-shutter-bottom" />
+        <span className="intro-shutter-panel intro-shutter-left" />
+        <span className="intro-shutter-panel intro-shutter-right" />
       </div>
     </div>
   );

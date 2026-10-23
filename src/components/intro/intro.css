@@ -24,42 +24,79 @@
   will-change: opacity, mask-image;
 }
 
-/* 退出：中心圆形扩散开屏（iris out）。
-   ⚠️ 这里踩过两个坑，最终方案记录如下：
-   1) 「在深色遮罩上盖一个深色实心圆放大」完全看不出来（同色）；
-   2) clip-path: circle() 在 root 上做窗口扩张，实测 780ms 内半径只推进到
-      约 640px（铺满 1440×900 需要 ~850px），元素在铺满前就被卸载，
-      观感仍是「直接跳转」。
-   现在改用 mask-image 径向渐变：遮罩本身的不透明度由圆心向外逐步「挖空」，
-   半径从 0 涨到覆盖全屏，画面就像从正中被打孔、向四周掀开。
-   mask 的百分比以遮罩自身尺寸为参考，配合 150% 的终点保证一定盖满。 */
+/* ============================================================
+   退出 / 开屏 —— 性能优先的实现
+   ------------------------------------------------------------
+   历史与教训（这些方案都试过且都不行，别再改回去）：
+   1) 在遮罩上盖一个同色实心圆放大：同色，完全看不出来；
+   2) clip-path: circle() 做窗口扩张：820ms 内半径只推进到约 640px
+      （铺满 1440×900 需 ~850px），元素在铺满前就卸载，观感是「直接跳转」；
+   3) mask-image 径向渐变动画：**功能正确但性能极差**——
+      浏览器每帧要重算整屏的 alpha 蒙版，实测开屏阶段只有 8.7fps
+      （稳定期 20fps），观感就是用户反馈的「一帧一帧地跳」。
+
+   最终方案：4 块门板（.intro-shutter-*）各自 transform 向外推开。
+   - 只动 transform，走 GPU 合成层，零像素重算；
+   - 四块拼起来正好覆盖全屏，推开后中间露出页面，效果仍是
+     「从正中心向四周开屏」；
+   - 面板本身带深空底色 + 边缘辉光，推开时边界清晰。
+   ============================================================ */
+
+/* 根层退出时只做极轻的整体淡出（可合成），不做任何裁剪/蒙版 */
 .intro-root[data-exiting="true"] {
   pointer-events: none;
-  animation: intro-iris-mask 1000ms cubic-bezier(0.45, 0, 0.3, 1) forwards;
+  animation: intro-root-settle-lite 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-@keyframes intro-iris-mask {
-  0% {
-    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0.001%);
-    mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0.001%);
-    opacity: 1;
-  }
-  55% {
-    /* 圆心已挖空到 45%，四周仍有遮罩 */
-    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 45%, #000 46%);
-    mask-image: radial-gradient(circle at 50% 50%, transparent 45%, #000 46%);
-    opacity: 1;
-  }
-  88% {
-    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 86%, #000 88%);
-    mask-image: radial-gradient(circle at 50% 50%, transparent 86%, #000 88%);
-    opacity: 1;
-  }
-  100% {
-    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 150%, #000 151%);
-    mask-image: radial-gradient(circle at 50% 50%, transparent 150%, #000 151%);
-    opacity: 0;
-  }
+@keyframes intro-root-settle-lite {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ============================================================
+   开屏瞬间冻结所有装饰动画（性能关键）
+   ------------------------------------------------------------
+   用户反馈的是「就绪 → 露出首屏」这一下展开卡顿。
+   原因不是门板本身，而是此刻仍有约 39 个动画在同时跑：
+   三层极光漂移、扫描线、刻度环旋转、星尘呼吸、脉冲环、环绕光点，
+   再叠加粒子的 Canvas rAF —— 它们和门板推开抢同一帧的渲染时间。
+   而这些元素在开屏的 0.9 秒内本来就要被推走、根本看不清，
+   继续跑纯属浪费算力。
+
+   做法：进入 exiting 的瞬间把它们全部停止 / 直接隐藏。
+   门板推开只依赖 transform，不受影响；观感反而更干净利落。
+   ============================================================ */
+.intro-root[data-exiting="true"] .intro-aurora,
+.intro-root[data-exiting="true"] .intro-ticks,
+.intro-root[data-exiting="true"] .intro-scan,
+.intro-root[data-exiting="true"] .intro-stars,
+.intro-root[data-exiting="true"] .intro-orbit,
+.intro-root[data-exiting="true"] .intro-pulse-ring,
+.intro-root[data-exiting="true"] .intro-stage,
+.intro-root[data-exiting="true"] .intro-corner,
+.intro-root[data-exiting="true"] .intro-progress,
+.intro-root[data-exiting="true"] .intro-status {
+  /* ⚠️ 只冻结「纯装饰」层的动画。
+     不要包含 .intro-brand / .intro-counter：
+     它们的进场靠 animation-fill-mode 维持 opacity，一旦 animation:none
+     就会回落到初始的 opacity:0，开屏时品牌字会直接消失（踩过）。 */
+  animation: none !important;
+  transition: none !important;
+}
+
+/* 装饰层直接收起：开屏期间画面只留门板与中心光晕 */
+.intro-root[data-exiting="true"] .intro-aurora,
+.intro-root[data-exiting="true"] .intro-scan,
+.intro-root[data-exiting="true"] .intro-ticks,
+.intro-root[data-exiting="true"] .intro-stars,
+.intro-root[data-exiting="true"] .intro-orbit {
+  opacity: 0 !important;
+}
+
+/* 粒子 Canvas 在开屏时停掉（它是持续 rAF，最耗的一笔） */
+.intro-root[data-exiting="true"] .intro-canvas-wrap {
+  display: none !important;
 }
 
 /* ---------------- 背景氛围 ---------------- */
@@ -67,6 +104,9 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /* 叠在门板之上（门板 z-index:0）。开场时门板只是底色垫层，
+     真正的氛围由这一层提供；开屏时门板向四周推开，露出的是下方页面。 */
+  z-index: 1;
 }
 
 .intro-aurora {
@@ -191,6 +231,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
 .intro-canvas-wrap canvas {
@@ -205,6 +246,7 @@
   display: grid;
   place-items: center;
   pointer-events: none;
+  z-index: 3;
 }
 
 /* 倒计时块 */
@@ -619,12 +661,117 @@
 }
 
 /* ============================================================
-   圆形扩散开屏的边缘光环
-   —— 开屏动作本身由 .intro-root 的 mask-image 径向渐变完成
-      （见文件顶部 intro-iris-mask）。
-      这里只叠一圈随扩张同步放大的描边，让「圆心边缘」有发光感：
-      与遮罩同一时长、同一缓动，视觉上像一圈光在推开画面。
+   开屏门板（shutter）—— 4 块面板向外推开
+   性能要点：每块只做 transform 平移，浏览器直接走合成层，
+   不需要像 mask-image 那样每帧重算整屏 alpha。
    ============================================================ */
+.intro-shutter {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* ⚠️ 层级关系（踩过坑，别改）：
+     门板必须是**最底层**（z-index:0），背景层 1、粒子 2、内容 3 依次在其上。
+     早期把门板放在内容之上，开场阶段会把数字与品牌字整块遮住，
+     整个开场看起来就是「几块空面板」。
+     现在的语义：门板是开屏动作本身——4 块深色面板从中心向外推开，
+     推开后露出的是**下方的真实页面**（根层整体淡出配合）。
+     因此门板只在 exiting 阶段显示，平时不参与画面。 */
+  z-index: 0;
+}
+
+.intro-shutter-panel {
+  position: absolute;
+  /* 平时隐藏：门板只在「就绪 → 露出首屏」那一刻出场，
+     否则会盖住整个开场动画。 */
+  opacity: 0;
+  background-color: #05070f;
+  background-image:
+    radial-gradient(120% 100% at 50% 0%, rgb(124 92 255 / 0.26) 0%, transparent 60%),
+    radial-gradient(90% 80% at 50% 100%, rgb(34 211 238 / 0.15) 0%, transparent 62%);
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* 顶/底：占满宽度，高度各一半 */
+.intro-shutter-top,
+.intro-shutter-bottom {
+  left: 0;
+  width: 100%;
+  height: 50%;
+}
+
+/* 左/右：占满高度，宽度各一半 —— 与上下两块在中间重叠一条，
+   避免接缝处露出下方页面（重叠区由后面的绘制顺序盖住） */
+.intro-shutter-left,
+.intro-shutter-right {
+  top: 0;
+  width: 50%;
+  height: 100%;
+}
+
+.intro-shutter-top {
+  top: 0;
+  /* 上边缘一道极细的辉光，推开时边界清晰 */
+  box-shadow: 0 1px 0 0 rgb(185 166 255 / 0.25);
+}
+
+.intro-shutter-bottom {
+  bottom: 0;
+  box-shadow: 0 -1px 0 0 rgb(126 231 245 / 0.2);
+}
+
+.intro-shutter-left {
+  left: 0;
+  box-shadow: 1px 0 0 0 rgb(185 166 255 / 0.2);
+}
+
+.intro-shutter-right {
+  right: 0;
+  box-shadow: -1px 0 0 0 rgb(126 231 245 / 0.18);
+}
+
+/* 开屏瞬间门板显形：用 transition 而非动画，避免与 transform 动画冲突 */
+.intro-root[data-exiting="true"] .intro-shutter-panel {
+  opacity: 1;
+}
+
+/* 推开：各自向画面外平移。用 % 相对自身尺寸，
+   平移 100% 时恰好完全移出（顶/底各占 50% 高，100% 自身高 = 半屏），
+   这里给 105% 留一点余量，防止亚像素残留。 */
+/* 开屏时门板才显形（从 opacity:0 → 1 瞬切），并立即开始向外推开。
+   两者放在同一个 animation 里更稳，避免 opacity 与 transform 争抢。 */
+.intro-root[data-exiting="true"] .intro-shutter-top {
+  animation: shutter-up 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.intro-root[data-exiting="true"] .intro-shutter-bottom {
+  animation: shutter-down 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.intro-root[data-exiting="true"] .intro-shutter-left {
+  animation: shutter-left 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.intro-root[data-exiting="true"] .intro-shutter-right {
+  animation: shutter-right 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes shutter-up {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -105%, 0); }
+}
+@keyframes shutter-down {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, 105%, 0); }
+}
+@keyframes shutter-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-105%, 0, 0); }
+}
+@keyframes shutter-right {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(105%, 0, 0); }
+}
+
+/* 中心光晕：随门板推开同步扩散，强化「从中心炸开」的观感。
+   只做 scale + opacity，同样可合成。 */
 .intro-iris {
   position: absolute;
   left: 50%;
@@ -636,12 +783,13 @@
   pointer-events: none;
   opacity: 0;
   border-radius: 50%;
-  border: 1.5px solid rgb(185 166 255 / 0.45);
+  border: 1.5px solid rgb(185 166 255 / 0.35);
   box-shadow:
-    0 0 60px 8px rgb(124 92 255 / 0.3),
-    inset 0 0 80px 16px rgb(124 92 255 / 0.12);
+    0 0 60px 8px rgb(124 92 255 / 0.28),
+    inset 0 0 80px 16px rgb(124 92 255 / 0.1);
   transform: scale(0.05);
   transform-origin: center center;
+  z-index: 6;
 }
 
 .intro-iris-halo {
@@ -652,25 +800,14 @@
 }
 
 .intro-root[data-exiting="true"] .intro-iris {
-  animation: intro-iris-grow 1000ms cubic-bezier(0.45, 0, 0.3, 1) forwards;
+  animation: intro-iris-grow 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* 光环从中心的极小圈一路涨到超过视口，与 mask 的扩张节奏对齐 */
 @keyframes intro-iris-grow {
-  0% {
-    opacity: 0;
-    transform: scale(0.05);
-  }
-  12% {
-    opacity: 0.85;
-  }
-  70% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(6.5);
-  }
+  0% { opacity: 0; transform: scale(0.05); }
+  10% { opacity: 0.7; }
+  60% { opacity: 0.4; }
+  100% { opacity: 0; transform: scale(6.5); }
 }
 
 /* ============================================================
