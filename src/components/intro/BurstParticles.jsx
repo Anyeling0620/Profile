@@ -138,10 +138,21 @@ export default function BurstParticles({
           /* ---- 聚集：半径从外向内收，越靠内越快 ---- */
           const t = easeOutCubic(p / GATHER_END);
           const r = pt.startRadius * (1 - t) * pt.speed;
-          pt.alpha = 0.35 + 0.65 * t;
           const a = pt.angle + t * 1.4; // 螺旋吸入，比直线更有力
           const x = cx + Math.cos(a) * r;
           const y = cy + Math.sin(a) * r * 0.86;
+
+          /* 距离中心不足 R_NUM 时快速淡出：给中心的倒计时数字让位。
+             不做这一步，粒子会在收束末端密集覆盖数字，观感很乱。
+             用 smoothstep 做柔和过渡，避免硬切。 */
+          const R_NUM = Math.min(w, h) * 0.14;
+          const dist = Math.hypot(x - cx, y - cy);
+          const nearFade = Math.min(1, Math.max(0, (dist - R_NUM * 0.55) / (R_NUM * 0.45)));
+          const smooth = nearFade * nearFade * (3 - 2 * nearFade); // smoothstep
+
+          pt.alpha = (0.35 + 0.65 * t) * smooth;
+          if (pt.alpha <= 0.01) continue;
+
           const size = pt.size * (0.7 + t * 0.8);
           ctx.globalAlpha = pt.alpha;
           ctx.fillStyle = `rgb(${pt.color.r} ${pt.color.g} ${pt.color.b})`;

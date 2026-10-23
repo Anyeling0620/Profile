@@ -1,12 +1,12 @@
 /* ============================================================
-   INTRO LOADER —— 首屏开场（粒子冲击波 / 能量聚集）
+   INTRO LOADER —— 首屏开场（粒子冲击波 / 能量聚集 / 圆形扩散开屏）
    与全站同一套深空紫蓝语言：黑底 + 极光 + 玻璃 + 细线网格。
 
-   时间轴与 IntroLoader.jsx 的 TIMELINE 对应：
-     gather  0%–42%   粒子吸入 + 数字跳动 + 环形进度
-     burst   42%–62%  冲击波 + 白闪
-     reveal  62%–90%  品牌逐字揭示
-     curtain 90%–100% 幕布上移揭开
+   时间轴（与 IntroLoader.jsx 的 TIMELINE 对应）：
+     gather   0%–34%   粒子吸入 + 数字跳动 + 环形进度
+     burst    34%–50%  冲击波 + 白闪 + 色环扩散
+     reveal   50%–72%  品牌逐字揭示 + 环绕光点
+     curtain  72%–100% 中心圆形扩散开屏（iris out）
    ============================================================ */
 
 .intro-root {
@@ -14,18 +14,52 @@
   inset: 0;
   z-index: 200;
   overflow: hidden;
-  background: #03040a;
-  /* 幕布上移：transform 走合成，不触发重排 */
-  transition: transform 520ms cubic-bezier(0.76, 0, 0.24, 1),
-    opacity 520ms cubic-bezier(0.76, 0, 0.24, 1);
-  will-change: transform;
+  /* 开屏阶段的关键：遮罩底色要比页面底色**更亮、更有层次**。
+     否则 mask 挖洞时两边几乎同色，观感上等于「直接跳转」。
+     这里叠极光 + 网格，让被挖掉的圆形边界清晰可辨。 */
+  background-color: #05070f;
+  background-image:
+    radial-gradient(120% 100% at 50% 0%, rgb(124 92 255 / 0.3) 0%, transparent 62%),
+    radial-gradient(90% 80% at 50% 100%, rgb(34 211 238 / 0.18) 0%, transparent 64%);
+  will-change: opacity, mask-image;
 }
 
-/* 退出：整体向上揭开 */
+/* 退出：中心圆形扩散开屏（iris out）。
+   ⚠️ 这里踩过两个坑，最终方案记录如下：
+   1) 「在深色遮罩上盖一个深色实心圆放大」完全看不出来（同色）；
+   2) clip-path: circle() 在 root 上做窗口扩张，实测 780ms 内半径只推进到
+      约 640px（铺满 1440×900 需要 ~850px），元素在铺满前就被卸载，
+      观感仍是「直接跳转」。
+   现在改用 mask-image 径向渐变：遮罩本身的不透明度由圆心向外逐步「挖空」，
+   半径从 0 涨到覆盖全屏，画面就像从正中被打孔、向四周掀开。
+   mask 的百分比以遮罩自身尺寸为参考，配合 150% 的终点保证一定盖满。 */
 .intro-root[data-exiting="true"] {
-  transform: translate3d(0, -100%, 0);
-  opacity: 0.92;
   pointer-events: none;
+  animation: intro-iris-mask 1000ms cubic-bezier(0.45, 0, 0.3, 1) forwards;
+}
+
+@keyframes intro-iris-mask {
+  0% {
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0.001%);
+    mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0.001%);
+    opacity: 1;
+  }
+  55% {
+    /* 圆心已挖空到 45%，四周仍有遮罩 */
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 45%, #000 46%);
+    mask-image: radial-gradient(circle at 50% 50%, transparent 45%, #000 46%);
+    opacity: 1;
+  }
+  88% {
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 86%, #000 88%);
+    mask-image: radial-gradient(circle at 50% 50%, transparent 86%, #000 88%);
+    opacity: 1;
+  }
+  100% {
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 150%, #000 151%);
+    mask-image: radial-gradient(circle at 50% 50%, transparent 150%, #000 151%);
+    opacity: 0;
+  }
 }
 
 /* ---------------- 背景氛围 ---------------- */
@@ -83,7 +117,7 @@
   to { transform: translate3d(-50%, -50%, 0) scale(1.25); opacity: 0.6; }
 }
 
-/* 细线网格：给出「技术感」的地平线 */
+/* 细线网格 */
 .intro-grid {
   position: absolute;
   inset: 0;
@@ -94,6 +128,62 @@
   mask-image: radial-gradient(circle at 50% 50%, #000 10%, transparent 72%);
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 10%, transparent 72%);
   opacity: 0.9;
+}
+
+/* 星尘：用 radial-gradient 平铺模拟散点，零 DOM 成本 */
+.intro-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 22%, rgb(255 255 255 / 0.55), transparent),
+    radial-gradient(1.2px 1.2px at 78% 14%, rgb(185 166 255 / 0.6), transparent),
+    radial-gradient(1.6px 1.6px at 34% 68%, rgb(255 255 255 / 0.4), transparent),
+    radial-gradient(1.2px 1.2px at 88% 62%, rgb(126 231 245 / 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 56% 86%, rgb(255 255 255 / 0.35), transparent),
+    radial-gradient(1.2px 1.2px at 22% 88%, rgb(185 166 255 / 0.45), transparent),
+    radial-gradient(1.3px 1.3px at 66% 38%, rgb(255 255 255 / 0.5), transparent),
+    radial-gradient(1.1px 1.1px at 44% 12%, rgb(126 231 245 / 0.45), transparent);
+  opacity: 0.85;
+  animation: intro-stars-twinkle 3.4s ease-in-out infinite alternate;
+}
+
+@keyframes intro-stars-twinkle {
+  from { opacity: 0.45; }
+  to { opacity: 0.95; }
+}
+
+/* 同心刻度环：缓慢旋转，给出仪表盘的技术感 */
+.intro-ticks {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(78vmin, 44rem);
+  height: min(78vmin, 44rem);
+  transform: translate(-50%, -50%);
+  opacity: 0.55;
+  animation: intro-ticks-spin 26s linear infinite;
+}
+
+.intro-ticks svg {
+  width: 100%;
+  height: 100%;
+}
+
+.intro-ticks-ring {
+  fill: none;
+  stroke: rgb(124 92 255 / 0.28);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 10;
+}
+
+.intro-ticks-ring-2 {
+  stroke: rgb(34 211 238 / 0.2);
+  stroke-dasharray: 1 16;
+}
+
+@keyframes intro-ticks-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* ---------------- 粒子层 ---------------- */
@@ -117,32 +207,37 @@
   pointer-events: none;
 }
 
-/* 倒计时块：进入 reveal 阶段后整体淡出 */
+/* 倒计时块 */
 .intro-counter {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.6rem;
-  transition: opacity 260ms ease, transform 260ms cubic-bezier(0.4, 0, 1, 1),
-    filter 260ms ease;
+  display: grid;
+  place-items: center;
+  transition: opacity 240ms ease, transform 320ms cubic-bezier(0.4, 0, 1, 1),
+    filter 240ms ease;
 }
 
-/* 倒计时块：爆发瞬间即快速退场。
-   早期只在 reveal 阶段才淡出，导致数字与品牌字重叠、半透明互相干扰。
-   现在 burst 一开始就收，220ms 内退干净，给品牌留出独立舞台。 */
 .intro-root[data-phase="burst"] .intro-counter,
 .intro-root[data-phase="reveal"] .intro-counter,
 .intro-root[data-phase="curtain"] .intro-counter {
   opacity: 0;
-  transform: scale(1.35);
-  filter: blur(8px);
+  transform: scale(1.45);
+  filter: blur(10px);
 }
 
-/* 环形进度 */
+/* 圆环 + 数字的同心容器：数字用 grid 居中叠在圆环正中心 */
+.intro-ring-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(12rem, 27vw, 16rem);
+  height: clamp(12rem, 27vw, 16rem);
+}
+
 .intro-ring {
-  width: clamp(11rem, 26vw, 15rem);
-  height: clamp(11rem, 26vw, 15rem);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   transform: rotate(-90deg);
 }
 
@@ -154,74 +249,44 @@
 
 .intro-ring-bar {
   fill: none;
-  /* stroke 由 SVG 的 linearGradient 提供（见 IntroLoader.jsx 的 defs），
-     不要在这里写死颜色，否则会覆盖渐变。 */
+  /* stroke 由 SVG 的 linearGradient 提供，不要在此写死颜色 */
   stroke-width: 3;
   stroke-linecap: round;
   stroke-dasharray: 553;
-  /* 进度由 JS 直接写 strokeDashoffset，这里只做过渡平滑 */
   transition: stroke-dashoffset 90ms linear;
   filter: drop-shadow(0 0 6px rgb(124 92 255 / 0.9));
 }
 
-/* 数字 */
+/* 数字：grid 居中的直接子元素，天然与圆环同心。
+   旧实现是 absolute + top 硬偏移，容器尺寸一变就偏，已废弃。 */
 .intro-count {
-  position: absolute;
-  top: clamp(4.4rem, 10.4vw, 6rem);
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   display: flex;
   align-items: baseline;
-  gap: 0.15em;
+  justify-content: center;
+  gap: 0.1em;
   white-space: nowrap;
+  /* 等宽数字的字面中心略高于行框中心，微调一点点做光学居中 */
+  transform: translateY(0.02em);
 }
 
 .intro-count-num {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: clamp(2.6rem, 7vw, 4.2rem);
+  font-size: clamp(2.4rem, 6.4vw, 3.8rem);
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1;
   color: #f2f4ff;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 30px rgb(124 92 255 / 0.7);
+  text-shadow: 0 0 30px rgb(124 92 255 / 0.75);
 }
 
 .intro-count-pct {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: clamp(0.9rem, 2.2vw, 1.3rem);
+  font-size: clamp(0.8rem, 1.9vw, 1.15rem);
+  line-height: 1;
   color: #b9a6ff;
-  letter-spacing: 0.1em;
-}
-
-/* 状态点 */
-.intro-status {
-  display: flex;
-  gap: 1.4rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.62rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: #8b93b8;
-}
-
-.intro-status-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.intro-status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 9999px;
-  background: #22d3ee;
-  box-shadow: 0 0 10px rgb(34 211 238 / 0.9);
-  animation: intro-dot-pulse 1.1s ease-in-out infinite;
-}
-
-@keyframes intro-dot-pulse {
-  0%, 100% { opacity: 0.35; transform: scale(0.85); }
-  50% { opacity: 1; transform: scale(1.15); }
+  letter-spacing: 0.08em;
 }
 
 /* ---------------- 品牌揭示 ---------------- */
@@ -233,8 +298,8 @@
   gap: 1rem;
   opacity: 0;
   transform: translateY(14px) scale(0.97);
-  transition: opacity 520ms var(--ease-out-expo, ease),
-    transform 620ms var(--ease-out-expo, ease);
+  transition: opacity 480ms var(--ease-out-expo, ease),
+    transform 560ms var(--ease-out-expo, ease);
 }
 
 .intro-root[data-phase="reveal"] .intro-brand,
@@ -249,7 +314,6 @@
   letter-spacing: 0.5em;
   color: #8b93b8;
   text-transform: uppercase;
-  opacity: 0.9;
 }
 
 .intro-brand-title {
@@ -269,7 +333,7 @@
   width: 0.34em;
 }
 
-/* 逐字亮起：clip-path 由下往上揭示，规避 background-clip:text 的坑 */
+/* 逐字亮起 */
 .intro-char {
   display: inline-block;
   background-image: linear-gradient(100deg, #f2f4ff, #b9a6ff 38%, #4169ff 68%, #22d3ee 100%);
@@ -282,27 +346,36 @@
   opacity: 0;
 }
 
-/* 品牌逐字揭示：整体延后到爆发余波之后，避免与倒计时退场撞在一起 */
 .intro-root[data-phase="reveal"] .intro-char,
 .intro-root[data-phase="curtain"] .intro-char {
-  animation: intro-char-in 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: calc(90ms + var(--i) * 62ms);
+  animation: intro-char-in 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(60ms + var(--i) * 55ms);
 }
 
 @keyframes intro-char-in {
-  0% {
-    clip-path: inset(0 0 100% 0);
-    transform: translateY(0.16em);
-    opacity: 0;
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    clip-path: inset(0 0 0 0);
-    transform: translateY(0);
-    opacity: 1;
-  }
+  0% { clip-path: inset(0 0 100% 0); transform: translateY(0.16em); opacity: 0; }
+  55% { opacity: 1; }
+  100% { clip-path: inset(0 0 0 0); transform: translateY(0); opacity: 1; }
+}
+
+/* 标题下方辉光扫线：继承爆发余韵 */
+.intro-brand-sweep {
+  width: min(22rem, 64vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(185 166 255 / 0.9), transparent);
+  opacity: 0;
+  transform: scaleX(0.2);
+}
+
+.intro-root[data-phase="reveal"] .intro-brand-sweep,
+.intro-root[data-phase="curtain"] .intro-brand-sweep {
+  animation: intro-sweep-line 760ms cubic-bezier(0.22, 1, 0.36, 1) 260ms forwards;
+}
+
+@keyframes intro-sweep-line {
+  0% { opacity: 0; transform: scaleX(0.2); }
+  40% { opacity: 1; }
+  100% { opacity: 0.75; transform: scaleX(1); }
 }
 
 .intro-brand-sub {
@@ -312,12 +385,54 @@
   color: #a9b1d4;
   text-transform: uppercase;
   opacity: 0;
-  animation: intro-sub-in 700ms ease 620ms forwards;
+  animation: intro-sub-in 620ms ease 620ms forwards;
 }
 
 @keyframes intro-sub-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* 环绕光点：绕标题缓慢画圈 */
+.intro-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(34rem, 88vw);
+  height: min(12rem, 34vw);
+  transform: translate(-50%, -50%);
+  animation: intro-orbit-spin 14s linear infinite;
+  opacity: 0;
+  transition: opacity 600ms ease 320ms;
+}
+
+.intro-root[data-phase="reveal"] .intro-orbit,
+.intro-root[data-phase="curtain"] .intro-orbit {
+  opacity: 1;
+}
+
+@keyframes intro-orbit-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.intro-orbit-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 9999px;
+  background: #b9a6ff;
+  box-shadow: 0 0 10px rgb(185 166 255 / 0.95);
+  transform: rotate(calc(var(--i) * (360deg / var(--n)))) translateX(min(17rem, 44vw));
+  opacity: 0.8;
+}
+
+.intro-orbit-dot:nth-child(even) {
+  background: #7ee7f5;
+  box-shadow: 0 0 10px rgb(126 231 245 / 0.95);
 }
 
 /* ---------------- 爆闪 ---------------- */
@@ -330,13 +445,57 @@
 }
 
 .intro-root[data-phase="burst"] .intro-flash {
-  animation: intro-flash 320ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: intro-flash 340ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes intro-flash {
   0% { opacity: 0; }
-  18% { opacity: 0.9; }
+  16% { opacity: 0.92; }
   100% { opacity: 0; }
+}
+
+/* ---------------- 色环扩散（burst 时三圈错峰） ---------------- */
+.intro-rings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.intro-pulse-ring {
+  position: absolute;
+  width: 10vmin;
+  height: 10vmin;
+  border-radius: 9999px;
+  border: 1.5px solid rgb(185 166 255 / 0.85);
+  opacity: 0;
+}
+
+.intro-root[data-phase="burst"] .intro-pulse-ring,
+.intro-root[data-phase="reveal"] .intro-pulse-ring {
+  animation: intro-pulse 1100ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.intro-root[data-phase="burst"] .intro-pulse-ring:nth-child(1),
+.intro-root[data-phase="reveal"] .intro-pulse-ring:nth-child(1) {
+  animation-delay: 0ms;
+}
+.intro-root[data-phase="burst"] .intro-pulse-ring:nth-child(2),
+.intro-root[data-phase="reveal"] .intro-pulse-ring:nth-child(2) {
+  animation-delay: 120ms;
+  border-color: rgb(126 231 245 / 0.8);
+}
+.intro-root[data-phase="burst"] .intro-pulse-ring:nth-child(3),
+.intro-root[data-phase="reveal"] .intro-pulse-ring:nth-child(3) {
+  animation-delay: 240ms;
+  border-color: rgb(124 92 255 / 0.75);
+}
+
+@keyframes intro-pulse {
+  0% { opacity: 0; transform: scale(1); }
+  15% { opacity: 0.9; }
+  100% { opacity: 0; transform: scale(22); }
 }
 
 /* ---------------- 扫描线 ---------------- */
@@ -355,7 +514,7 @@
     rgb(124 92 255 / 0.14) 58%,
     transparent
   );
-  animation: intro-scan 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: intro-scan 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes intro-scan {
@@ -365,7 +524,7 @@
   100% { transform: translateY(122vh); opacity: 0; }
 }
 
-/* ---------------- 底部进度条 ---------------- */
+/* ---------------- 底部进度条 + 阶段刻度 ---------------- */
 .intro-progress {
   position: absolute;
   left: 0;
@@ -382,6 +541,30 @@
   transform: scaleX(0);
   background: linear-gradient(90deg, #7c5cff, #4169ff 52%, #22d3ee);
   box-shadow: 0 0 14px rgb(124 92 255 / 0.85);
+}
+
+.intro-stages {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.1rem, 3vh, 2rem);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1.1rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.56rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.intro-stage {
+  color: #4b5372;
+  transition: color 220ms ease, text-shadow 220ms ease;
+}
+
+.intro-stage[data-on="true"] {
+  color: #b9a6ff;
+  text-shadow: 0 0 14px rgb(124 92 255 / 0.8);
 }
 
 /* ---------------- 角标装饰 ---------------- */
@@ -405,20 +588,7 @@
 
 .intro-corner-br {
   right: clamp(1rem, 3vw, 2.2rem);
-  bottom: clamp(2.6rem, 5vw, 3.4rem);
-}
-
-/* 窄屏：右下角标与跳过按钮会挤在一起（实测移动端 LOADING ASSETS 压住按钮）。
-   小屏直接隐藏该角标，只保留跳过按钮，信息密度更合理。 */
-@media (max-width: 639px) {
-  .intro-corner-br {
-    display: none;
-  }
-  .intro-status {
-    gap: 0.9rem;
-    font-size: 0.55rem;
-    letter-spacing: 0.18em;
-  }
+  bottom: clamp(1.3rem, 3.5vh, 2.4rem);
 }
 
 .intro-corner-mark {
@@ -436,74 +606,115 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------------- 跳过按钮 ---------------- */
-.intro-skip {
+/* 窄屏：右下角标与阶段刻度会挤在一起，隐藏角标并收紧刻度 */
+@media (max-width: 639px) {
+  .intro-corner-br {
+    display: none;
+  }
+  .intro-stages {
+    gap: 0.7rem;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* ============================================================
+   圆形扩散开屏的边缘光环
+   —— 开屏动作本身由 .intro-root 的 mask-image 径向渐变完成
+      （见文件顶部 intro-iris-mask）。
+      这里只叠一圈随扩张同步放大的描边，让「圆心边缘」有发光感：
+      与遮罩同一时长、同一缓动，视觉上像一圈光在推开画面。
+   ============================================================ */
+.intro-iris {
   position: absolute;
-  right: clamp(1rem, 3vw, 2.2rem);
-  bottom: clamp(0.9rem, 2.4vw, 1.4rem);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  background: rgb(8 10 18 / 0.65);
-  backdrop-filter: blur(12px);
-  color: #a9b1d4;
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  transition: all 220ms ease;
+  left: 50%;
+  top: 50%;
+  width: 40vmax;
+  height: 40vmax;
+  margin-left: -20vmax;
+  margin-top: -20vmax;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgb(185 166 255 / 0.45);
+  box-shadow:
+    0 0 60px 8px rgb(124 92 255 / 0.3),
+    inset 0 0 80px 16px rgb(124 92 255 / 0.12);
+  transform: scale(0.05);
+  transform-origin: center center;
 }
 
-.intro-skip:hover,
-.intro-skip:focus-visible {
-  color: #f2f4ff;
-  border-color: rgb(185 166 255 / 0.55);
-  background: rgb(124 92 255 / 0.18);
-  box-shadow: 0 0 26px -10px rgb(124 92 255 / 0.9);
-  outline: none;
+.intro-iris-halo {
+  position: absolute;
+  inset: -6%;
+  border-radius: 50%;
+  border: 1px solid rgb(126 231 245 / 0.3);
 }
 
-.intro-skip-key {
-  padding: 0.05rem 0.35rem;
-  border-radius: 0.3rem;
-  border: 1px solid rgb(255 255 255 / 0.16);
-  background: rgb(255 255 255 / 0.06);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.58rem;
-  letter-spacing: 0.04em;
+.intro-root[data-exiting="true"] .intro-iris {
+  animation: intro-iris-grow 1000ms cubic-bezier(0.45, 0, 0.3, 1) forwards;
 }
 
-/* ---------------- 减弱动效：极简版 ---------------- */
+/* 光环从中心的极小圈一路涨到超过视口，与 mask 的扩张节奏对齐 */
+@keyframes intro-iris-grow {
+  0% {
+    opacity: 0;
+    transform: scale(0.05);
+  }
+  12% {
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(6.5);
+  }
+}
+
+/* ============================================================
+   减弱动效：极简版
+   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  .intro-root {
-    transition-duration: 160ms;
+  .intro-root[data-exiting="true"] {
+    animation-duration: 180ms;
   }
   .intro-aurora,
+  .intro-ticks,
   .intro-scan,
-  .intro-status-dot {
+  .intro-stars,
+  .intro-orbit {
     animation: none !important;
   }
   .intro-counter,
   .intro-brand,
   .intro-char,
-  .intro-brand-sub {
+  .intro-brand-sub,
+  .intro-brand-sweep {
     transition: none !important;
     animation: none !important;
     clip-path: none !important;
     transform: none !important;
     opacity: 1 !important;
   }
-  .intro-flash {
+  .intro-flash,
+  .intro-rings {
     display: none;
+  }
+  /* 开屏改为简单淡化，不做圆形扩散 */
+  .intro-root[data-exiting="true"] .intro-iris,
+  .intro-root[data-exiting="true"] .intro-iris-halo,
+  .intro-root[data-exiting="true"] .intro-iris-edge {
+    animation: none !important;
   }
 }
 
-/* 低性能设备：减少大面积模糊与扫描线 */
+/* 低性能设备：压缩大面积模糊与装饰 */
 [data-perf="low"] .intro-aurora {
   filter: blur(40px);
 }
-[data-perf="low"] .intro-scan {
+[data-perf="low"] .intro-scan,
+[data-perf="low"] .intro-ticks {
   display: none;
 }
