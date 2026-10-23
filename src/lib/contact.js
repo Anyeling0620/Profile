@@ -66,8 +66,8 @@ async function sendContactMessage(formData, options = {}) {
   }
 
   if (!response.ok) {
-    // 后端在 body 里给了人话错误，优先用它
-    let message = "";
+    // 后端在 body 里给了人话错误，优先用它；解析失败则回退到状态码文案
+    let message;
     try {
       const data = await response.json();
       message = data?.error || "";
