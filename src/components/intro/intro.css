@@ -1,0 +1,509 @@
+/* ============================================================
+   INTRO LOADER —— 首屏开场（粒子冲击波 / 能量聚集）
+   与全站同一套深空紫蓝语言：黑底 + 极光 + 玻璃 + 细线网格。
+
+   时间轴与 IntroLoader.jsx 的 TIMELINE 对应：
+     gather  0%–42%   粒子吸入 + 数字跳动 + 环形进度
+     burst   42%–62%  冲击波 + 白闪
+     reveal  62%–90%  品牌逐字揭示
+     curtain 90%–100% 幕布上移揭开
+   ============================================================ */
+
+.intro-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  background: #03040a;
+  /* 幕布上移：transform 走合成，不触发重排 */
+  transition: transform 520ms cubic-bezier(0.76, 0, 0.24, 1),
+    opacity 520ms cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: transform;
+}
+
+/* 退出：整体向上揭开 */
+.intro-root[data-exiting="true"] {
+  transform: translate3d(0, -100%, 0);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+/* ---------------- 背景氛围 ---------------- */
+.intro-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.intro-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  will-change: transform;
+}
+
+.intro-aurora-a {
+  width: 62vmax;
+  height: 62vmax;
+  left: -14vmax;
+  top: -18vmax;
+  background: radial-gradient(circle, rgb(124 92 255 / 0.55), transparent 68%);
+  animation: intro-drift-a 9s ease-in-out infinite alternate;
+}
+
+.intro-aurora-b {
+  width: 54vmax;
+  height: 54vmax;
+  right: -12vmax;
+  bottom: -16vmax;
+  background: radial-gradient(circle, rgb(34 211 238 / 0.42), transparent 68%);
+  animation: intro-drift-b 11s ease-in-out infinite alternate;
+}
+
+.intro-aurora-c {
+  width: 40vmax;
+  height: 40vmax;
+  left: 52%;
+  top: 46%;
+  background: radial-gradient(circle, rgb(65 105 255 / 0.4), transparent 70%);
+  animation: intro-drift-c 7s ease-in-out infinite alternate;
+}
+
+@keyframes intro-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(6vmax, 4vmax, 0) scale(1.14); }
+}
+@keyframes intro-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.08); }
+  to { transform: translate3d(-5vmax, -3vmax, 0) scale(1); }
+}
+@keyframes intro-drift-c {
+  from { transform: translate3d(-50%, -50%, 0) scale(0.9); opacity: 0.35; }
+  to { transform: translate3d(-50%, -50%, 0) scale(1.25); opacity: 0.6; }
+}
+
+/* 细线网格：给出「技术感」的地平线 */
+.intro-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(124 92 255 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(124 92 255 / 0.07) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(circle at 50% 50%, #000 10%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 10%, transparent 72%);
+  opacity: 0.9;
+}
+
+/* ---------------- 粒子层 ---------------- */
+.intro-canvas-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.intro-canvas-wrap canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------------- 中心内容 ---------------- */
+.intro-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* 倒计时块：进入 reveal 阶段后整体淡出 */
+.intro-counter {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6rem;
+  transition: opacity 260ms ease, transform 260ms cubic-bezier(0.4, 0, 1, 1),
+    filter 260ms ease;
+}
+
+/* 倒计时块：爆发瞬间即快速退场。
+   早期只在 reveal 阶段才淡出，导致数字与品牌字重叠、半透明互相干扰。
+   现在 burst 一开始就收，220ms 内退干净，给品牌留出独立舞台。 */
+.intro-root[data-phase="burst"] .intro-counter,
+.intro-root[data-phase="reveal"] .intro-counter,
+.intro-root[data-phase="curtain"] .intro-counter {
+  opacity: 0;
+  transform: scale(1.35);
+  filter: blur(8px);
+}
+
+/* 环形进度 */
+.intro-ring {
+  width: clamp(11rem, 26vw, 15rem);
+  height: clamp(11rem, 26vw, 15rem);
+  transform: rotate(-90deg);
+}
+
+.intro-ring-track {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.08);
+  stroke-width: 2;
+}
+
+.intro-ring-bar {
+  fill: none;
+  /* stroke 由 SVG 的 linearGradient 提供（见 IntroLoader.jsx 的 defs），
+     不要在这里写死颜色，否则会覆盖渐变。 */
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 553;
+  /* 进度由 JS 直接写 strokeDashoffset，这里只做过渡平滑 */
+  transition: stroke-dashoffset 90ms linear;
+  filter: drop-shadow(0 0 6px rgb(124 92 255 / 0.9));
+}
+
+/* 数字 */
+.intro-count {
+  position: absolute;
+  top: clamp(4.4rem, 10.4vw, 6rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 0.15em;
+  white-space: nowrap;
+}
+
+.intro-count-num {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: clamp(2.6rem, 7vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f2f4ff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 30px rgb(124 92 255 / 0.7);
+}
+
+.intro-count-pct {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: clamp(0.9rem, 2.2vw, 1.3rem);
+  color: #b9a6ff;
+  letter-spacing: 0.1em;
+}
+
+/* 状态点 */
+.intro-status {
+  display: flex;
+  gap: 1.4rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #8b93b8;
+}
+
+.intro-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.intro-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #22d3ee;
+  box-shadow: 0 0 10px rgb(34 211 238 / 0.9);
+  animation: intro-dot-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes intro-dot-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* ---------------- 品牌揭示 ---------------- */
+.intro-brand {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+  transition: opacity 520ms var(--ease-out-expo, ease),
+    transform 620ms var(--ease-out-expo, ease);
+}
+
+.intro-root[data-phase="reveal"] .intro-brand,
+.intro-root[data-phase="curtain"] .intro-brand {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.intro-brand-eyebrow {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.5em;
+  color: #8b93b8;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.intro-brand-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.02em;
+  margin: 0;
+  font-size: clamp(2.2rem, 8.5vw, 5.2rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #f2f4ff;
+}
+
+.intro-brand-gap {
+  display: inline-block;
+  width: 0.34em;
+}
+
+/* 逐字亮起：clip-path 由下往上揭示，规避 background-clip:text 的坑 */
+.intro-char {
+  display: inline-block;
+  background-image: linear-gradient(100deg, #f2f4ff, #b9a6ff 38%, #4169ff 68%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(0.16em);
+  opacity: 0;
+}
+
+/* 品牌逐字揭示：整体延后到爆发余波之后，避免与倒计时退场撞在一起 */
+.intro-root[data-phase="reveal"] .intro-char,
+.intro-root[data-phase="curtain"] .intro-char {
+  animation: intro-char-in 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(90ms + var(--i) * 62ms);
+}
+
+@keyframes intro-char-in {
+  0% {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(0.16em);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.intro-brand-sub {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.36em;
+  color: #a9b1d4;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: intro-sub-in 700ms ease 620ms forwards;
+}
+
+@keyframes intro-sub-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------- 爆闪 ---------------- */
+.intro-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, #fff 0%, rgb(185 166 255 / 0.65) 26%, transparent 62%);
+  opacity: 0;
+}
+
+.intro-root[data-phase="burst"] .intro-flash {
+  animation: intro-flash 320ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes intro-flash {
+  0% { opacity: 0; }
+  18% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+/* ---------------- 扫描线 ---------------- */
+.intro-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 22vh;
+  top: -22vh;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(124 92 255 / 0.14) 42%,
+    rgb(185 166 255 / 0.35) 50%,
+    rgb(124 92 255 / 0.14) 58%,
+    transparent
+  );
+  animation: intro-scan 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes intro-scan {
+  0% { transform: translateY(0); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateY(122vh); opacity: 0; }
+}
+
+/* ---------------- 底部进度条 ---------------- */
+.intro-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgb(255 255 255 / 0.06);
+}
+
+.intro-progress-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, #7c5cff, #4169ff 52%, #22d3ee);
+  box-shadow: 0 0 14px rgb(124 92 255 / 0.85);
+}
+
+/* ---------------- 角标装饰 ---------------- */
+.intro-corner {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #6b7396;
+  pointer-events: none;
+}
+
+.intro-corner-tl {
+  left: clamp(1rem, 3vw, 2.2rem);
+  top: clamp(1rem, 3vw, 2rem);
+}
+
+.intro-corner-br {
+  right: clamp(1rem, 3vw, 2.2rem);
+  bottom: clamp(2.6rem, 5vw, 3.4rem);
+}
+
+/* 窄屏：右下角标与跳过按钮会挤在一起（实测移动端 LOADING ASSETS 压住按钮）。
+   小屏直接隐藏该角标，只保留跳过按钮，信息密度更合理。 */
+@media (max-width: 639px) {
+  .intro-corner-br {
+    display: none;
+  }
+  .intro-status {
+    gap: 0.9rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+  }
+}
+
+.intro-corner-mark {
+  display: grid;
+  place-items: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  padding: 0 0.4rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.04);
+  color: #b9a6ff;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- 跳过按钮 ---------------- */
+.intro-skip {
+  position: absolute;
+  right: clamp(1rem, 3vw, 2.2rem);
+  bottom: clamp(0.9rem, 2.4vw, 1.4rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(8 10 18 / 0.65);
+  backdrop-filter: blur(12px);
+  color: #a9b1d4;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 220ms ease;
+}
+
+.intro-skip:hover,
+.intro-skip:focus-visible {
+  color: #f2f4ff;
+  border-color: rgb(185 166 255 / 0.55);
+  background: rgb(124 92 255 / 0.18);
+  box-shadow: 0 0 26px -10px rgb(124 92 255 / 0.9);
+  outline: none;
+}
+
+.intro-skip-key {
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(255 255 255 / 0.06);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---------------- 减弱动效：极简版 ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .intro-root {
+    transition-duration: 160ms;
+  }
+  .intro-aurora,
+  .intro-scan,
+  .intro-status-dot {
+    animation: none !important;
+  }
+  .intro-counter,
+  .intro-brand,
+  .intro-char,
+  .intro-brand-sub {
+    transition: none !important;
+    animation: none !important;
+    clip-path: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .intro-flash {
+    display: none;
+  }
+}
+
+/* 低性能设备：减少大面积模糊与扫描线 */
+[data-perf="low"] .intro-aurora {
+  filter: blur(40px);
+}
+[data-perf="low"] .intro-scan {
+  display: none;
+}
