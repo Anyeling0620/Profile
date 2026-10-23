@@ -3,14 +3,8 @@ import { useState } from "react";
 import MagneticButton from "./fx/MagneticButton";
 
 import { useToast } from "../hooks/useToast";
-import { getContactMessageCooldown, sendEmailjsMessage } from "../lib/emailjs";
+import { getContactMessageCooldown, sendContactMessage } from "../lib/contact";
 import { cn } from "../lib/utils";
-
-const EMAILJS_CONFIG = {
-  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
-  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
-};
 
 const initialFormData = {
   user_name: "",
@@ -50,7 +44,7 @@ export default function ContactSection() {
 
     setTimeout(async () => {
       try {
-        await sendEmailjsMessage(formData, EMAILJS_CONFIG);
+        await sendContactMessage(formData);
         setLastSentAt(Date.now());
         toast({
           title: "消息已发送！",
@@ -244,7 +238,7 @@ export default function ContactSection() {
             <div className="relative flex items-center justify-between gap-3">
               <h3 className="text-lg font-bold text-foreground sm:text-xl">发送消息</h3>
               <span className="rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-subtle">
-                EmailJS
+                在线发送
               </span>
             </div>
 
@@ -339,7 +333,7 @@ export default function ContactSection() {
               </MagneticButton>
 
               <p className="mt-3 text-center text-[0.66rem] text-subtle">
-                通过 EmailJS 发送 · 60 秒内仅可提交一次
+                发送至站主邮箱 · 60 秒内仅可提交一次
               </p>
             </form>
           </div>
