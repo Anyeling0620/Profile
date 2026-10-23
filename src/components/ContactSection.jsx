@@ -1,5 +1,5 @@
 import { Mail, MapPin, Phone, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MagneticButton from "./fx/MagneticButton";
 
 import { useToast } from "../hooks/useToast";
@@ -17,6 +17,46 @@ export default function ContactSection() {
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSentAt, setLastSentAt] = useState(0);
+
+  /**
+   * 冷却倒计时（派生状态）。
+   *
+   * 原来只有 lastSentAt 一个时间戳、没有定时器，导致「冷却中」永远不会
+   * 反映到界面上（按钮不变灰、也没有秒数）。
+   *
+   * 做法：维护一个每秒推进的 now，冷却剩余量由 (lastSentAt, now) 直接派生。
+   *  - Math.ceil 保证最后一秒仍显示 1，不会出现「0 秒却仍禁用」；
+   *  - 冷却结束立即停止心跳，空闲时不空转；lastSentAt 变化时重启；
+   *  - 卸载时清理，避免泄漏。
+   * 注意：effect 内**不做同步 setState**（会触发级联渲染，eslint 也禁止），
+   * 首次 now 已在发送成功时由 handleSubmit 一并写入。
+   */
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!lastSentAt) return undefined;
+    if (getContactMessageCooldown(lastSentAt) <= 0) return undefined;
+
+    const timer = window.setInterval(() => {
+      /* 关键：无论是否已冷却结束都要更新 now。
+         早期写法在 remaining<=0 时直接 return，导致 now 停在最后一帧，
+         派生出的 cooldownLeft 永远是 1 → 按钮永久灰着不恢复。
+         这里先写入真实时间，再由派生逻辑把 0 算出来。 */
+      setNow(Date.now());
+      if (getContactMessageCooldown(lastSentAt) <= 0) {
+        window.clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [lastSentAt]);
+
+  const cooldownLeft = lastSentAt
+    ? Math.ceil(getContactMessageCooldown(lastSentAt, now) / 1000)
+    : 0;
+
+  const isCoolingDown = cooldownLeft > 0;
+  const submitDisabled = isSubmitting || isCoolingDown;
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -45,13 +85,19 @@ export default function ContactSection() {
     setTimeout(async () => {
       try {
         await sendContactMessage(formData);
-        setLastSentAt(Date.now());
+        /* 同一时刻写入两个时间基准：
+           lastSentAt 用于判断冷却，now 用于 derive 剩余秒数，
+           两者一致才不会出现「刚开始冷却却显示 59 秒」的跳变。 */
+        const sentAt = Date.now();
+        setLastSentAt(sentAt);
+        setNow(sentAt);
         toast({
           title: "消息已发送！",
           description: "感谢你的留言，我会尽快回复你。",
           variant: "success",
         });
-        setFormData(initialFormData);
+        /* 发送成功后**保留**已填内容，不再重置表单：
+           既能核对刚发出去的信息，失败重试或想补充留言时也无需重新输入。 */
       } catch (error) {
         toast({
           title: "发送失败",
@@ -306,10 +352,18 @@ export default function ContactSection() {
               <MagneticButton className="w-full" strength={7}>
               <button
                 type="submit"
-                disabled={isSubmitting}
-                data-fx-ripple=""
+                disabled={submitDisabled}
+                aria-disabled={submitDisabled}
+                aria-live="polite"
+                data-fx-ripple={submitDisabled ? undefined : ""}
                 className={cn(
-                  "cosmic-button fx-ripple-host group w-full justify-center gap-2 text-sm disabled:cursor-not-allowed disabled:opacity-70",
+                  "cosmic-button fx-ripple-host group w-full justify-center gap-2 text-sm",
+                  "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100 disabled:hover:shadow-none",
+                  /* 冷却中：明显「置灰」——去掉品牌渐变/辉光，压暗底色与文字，
+                     与可点击的亮紫按钮一眼可分。用 background-image:none
+                     覆盖 cosmic-button 的渐变，否则底色会被渐变盖住而不生效。 */
+                  isCoolingDown &&
+                    "bg-white/[0.04] bg-none text-subtle shadow-none saturate-0 hover:scale-100 hover:shadow-none",
                 )}
               >
                 {isSubmitting ? (
@@ -319,6 +373,14 @@ export default function ContactSection() {
                       className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
                     />
                     发送中...
+                  </>
+                ) : isCoolingDown ? (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent opacity-50"
+                    />
+                    {cooldownLeft} 秒后可再次发送
                   </>
                 ) : (
                   <>
@@ -332,8 +394,13 @@ export default function ContactSection() {
               </button>
               </MagneticButton>
 
-              <p className="mt-3 text-center text-[0.66rem] text-subtle">
-                发送至站主邮箱 · 60 秒内仅可提交一次
+              <p
+                className="mt-3 text-center text-[0.66rem] text-subtle"
+                aria-live="polite"
+              >
+                {isCoolingDown
+                  ? `发送冷却中 · 还可发送时间 ${cooldownLeft} 秒`
+                  : "发送至站主邮箱 · 60 秒内仅可提交一次"}
               </p>
             </form>
           </div>
