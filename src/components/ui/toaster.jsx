@@ -12,9 +12,10 @@ function Toaster() {
   const { toasts } = useToast();
 
   return (
-    <ToastProvider>
+    <ToastProvider swipeDirection="up">
       {toasts.map(({ id, title, description, action, ...props }) => (
         <Toast key={id} {...props}>
+          {/* 内容居中：标题与描述都走 text-center（见 toast.jsx 的 ToastTitle / ToastDescription） */}
           <div className="grid gap-1">
             {title ? <ToastTitle>{title}</ToastTitle> : null}
             {description ? (

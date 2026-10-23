@@ -35,7 +35,7 @@ const skills = [
   // Tools
   { name: "Git/GitHub/Gitea", level: 90, category: "tools" },
   { name: "Docker", level: 90, category: "tools" },
-  { name: "ApiFox", level: 90, category: "tools" },
+  { name: "Apifox", level: 90, category: "tools" },
   { name: "Jenkins", level: 85, category: "tools" },
   { name: "Jmeter", level: 80, category: "tools" },
   { name: "Prometheus", level: 80, category: "tools" },
