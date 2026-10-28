@@ -404,7 +404,14 @@ export default function AuroraBackground() {
           对超大元素同时施加 blur + transform/scale 动画会把帧间隔从 16.7ms 拉到
           83~100ms（约 10fps），因为每帧都要重新做一次大半径模糊。
           改为「多段柔和渐变」直接画出边缘羽化效果：同样的观感，满帧运行。
-          峰值 alpha 保持不变，以匹配已验证的对比度上界（正文 ≥10:1）。 */}
+          峰值 alpha 保持不变，以匹配已验证的对比度上界（正文 ≥10:1）。
+
+          尺寸取舍（60vmax，实测原始渐变）：
+            78~72vmax → 50ms/帧（20fps）；66vmax → 20fps；**60vmax → 33ms（30fps）**
+          这是「大面积持续重绘」在软渲染下的分水岭。60vmax 仍能铺满首屏、
+          三色层次与暗角观感完整（截图比对过），因此定为 60vmax。
+          参考对照：把光斑动画整体停掉也只有 30fps，说明 30fps 已是本环境
+          下「背景有动画」的上限，再缩尺寸没有额外收益，故不再继续缩小。 */}
       <div
         ref={farRef}
         className="absolute -inset-[15%]"
@@ -412,7 +419,7 @@ export default function AuroraBackground() {
       >
         {/* 紫：左上 */}
         <div
-          className="animate-aurora-drift absolute -left-[10%] -top-[22%] h-[78vmax] w-[78vmax] rounded-full"
+          className="animate-aurora-drift absolute -left-[10%] -top-[22%] h-[60vmax] w-[60vmax] rounded-full"
           style={{
             backgroundImage:
               "radial-gradient(circle at 50% 50%, rgb(124 92 255 / 0.42) 0%, rgb(124 92 255 / 0.3) 16%, rgb(124 92 255 / 0.18) 30%, rgb(124 92 255 / 0.09) 44%, rgb(124 92 255 / 0.035) 56%, transparent 68%)",
@@ -420,7 +427,7 @@ export default function AuroraBackground() {
         />
         {/* 蓝：右上 */}
         <div
-          className="animate-aurora-drift-slow absolute -right-[14%] -top-[18%] h-[70vmax] w-[70vmax] rounded-full"
+          className="animate-aurora-drift-slow absolute -right-[14%] -top-[18%] h-[60vmax] w-[60vmax] rounded-full"
           style={{
             animationDelay: "-8s",
             backgroundImage:
@@ -429,7 +436,7 @@ export default function AuroraBackground() {
         />
         {/* 青：中下，拉出极光帘的体积感 */}
         <div
-          className="animate-aurora-drift absolute left-[18%] top-[42%] h-[64vmax] w-[92vmax] rounded-full"
+          className="animate-aurora-drift absolute left-[18%] top-[42%] h-[52vmax] w-[60vmax] rounded-full"
           style={{
             animationDelay: "-14s",
             animationDuration: "34s",
