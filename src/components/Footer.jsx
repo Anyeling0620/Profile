@@ -123,8 +123,11 @@ export default function Footer() {
             © {new Date().getFullYear()} Kuang Zihao · 保留所有权利
           </p>
 
-          {/* ICP 备案：图标 + 号码合成一个低调的胶囊，悬停才略微亮起。
-              跳转逻辑保持原样（新窗口 + noopener noreferrer）。
+          {/* ICP 备案：备案核查要求号码「清晰可读、一眼可见」，
+              因此改为高对比度的实心亮底徽标（不再依赖悬停才亮起）：
+              - 亮底 + 深字，对比度约 14:1，远超 WCAG AA；
+              - 常亮态就足够显眼，hover 只做轻微提亮；
+              - 跳转逻辑保持原样（新窗口 + noopener noreferrer）。
               aria-label 说明去向，屏幕阅读器不会只念号码；
               图标 alt 置空 + aria-hidden，避免重复朗读。 */}
           <a
@@ -132,17 +135,17 @@ export default function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`${BEIAN_TEXT}，工业和信息化部备案管理系统，新窗口打开`}
-            className="group mx-auto inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[0.68rem] leading-none text-subtle transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-muted sm:text-[0.7rem]"
+            className="group mx-auto inline-flex items-center gap-2 rounded-full border border-cyan/40 bg-cyan px-4 py-1.5 text-[0.78rem] font-semibold leading-none text-background shadow-[0_0_20px_-4px_rgba(34,211,238,0.55)] transition-all duration-300 hover:bg-cyan-soft hover:shadow-[0_0_26px_-2px_rgba(34,211,238,0.7)] sm:text-sm"
           >
             <img
               src={ICPLogo}
               alt=""
               aria-hidden="true"
-              className="h-3.5 w-3.5 shrink-0 opacity-85 transition-opacity duration-300 group-hover:opacity-100"
+              className="h-4 w-4 shrink-0 opacity-90 transition-opacity duration-300 group-hover:opacity-100"
               loading="lazy"
               decoding="async"
             />
-            <span className="whitespace-nowrap font-medium">{BEIAN_TEXT}</span>
+            <span className="whitespace-nowrap tracking-wide">{BEIAN_TEXT}</span>
           </a>
         </div>
       </div>
