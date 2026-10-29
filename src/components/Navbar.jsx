@@ -28,6 +28,7 @@ function GithubMark({ className }) {
   );
 }
 
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -96,10 +97,7 @@ export default function Navbar() {
     };
   }, []);
 
-  /* ---------- 3. 高亮下划线：测量当前项位置 ----------
-     编辑式形态下不再用「胶囊滑块」背景，改成贴底的 1px 细线。
-     测量逻辑不变（offsetLeft / offsetWidth 取自同一个链接），
-     只是消费方式从「背景块」变成「细线」，避免出现一块玻璃底片。 */
+  /* ---------- 3. 高亮胶囊滑块：测量当前项位置 ---------- */
   const measureIndicator = useCallback(() => {
     const index = navItems.findIndex((item) => item.id === activeId);
     const el = linkRefs.current[index];
@@ -109,7 +107,7 @@ export default function Navbar() {
 
   useEffect(() => {
     measureIndicator();
-    /* 字体加载/窗口尺寸变化后重新测量，避免下划线错位 */
+    /* 字体加载/窗口尺寸变化后重新测量，避免滑块错位 */
     const onResize = () => measureIndicator();
     window.addEventListener("resize", onResize);
     if (document.fonts?.ready) document.fonts.ready.then(measureIndicator).catch(() => {});
@@ -147,9 +145,8 @@ export default function Navbar() {
   };
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-[var(--z-nav)]">
-      {/* 阅读进度线：贴屏幕顶端的 1px 细线，编辑式版面里它替代了「悬浮胶囊阴影」的视觉重量。
-          只改 transform 的 scaleX，不触发重排。 */}
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-[var(--z-nav)] flex flex-col items-center px-3 pt-3 sm:px-4 sm:pt-4">
+      {/* 阅读进度线（滚动后显现） */}
       <div
         aria-hidden="true"
         className={cn(
@@ -157,161 +154,150 @@ export default function Navbar() {
           isScrolled ? "opacity-100" : "opacity-0",
         )}
       >
-        {/* 阅读进度条：单色细线。
-            原来是紫→蓝→青三段渐变，那是装饰性彩色渐变，与全站
-            「直角 / 实色 / 细线」的编辑式语言冲突（评审也点名了）。
-            改成一条单色 hairline：进度是**信息**，不需要配色表演。 */}
         <div
-          className="h-full origin-left bg-cyan-soft"
+          className="h-full origin-left bg-gradient-to-r from-primary via-accent to-cyan shadow-[0_0_12px_rgba(124,92,255,0.85)]"
           style={{ transform: `scaleX(${progress})` }}
         />
       </div>
 
-      {/* ---------- 编辑式导航条 ----------
-          从「悬浮玻璃胶囊」改成「通栏 + 贴底 hairline」：
-          编辑式版面不用圆角玻璃盒子围住导航，而是让导航坐在一条与版心等宽的细线上。
-          滚动后只增加一层极淡的背景模糊保证可读性，不加阴影、不加圆角。 */}
-      {/* 版心对齐：导航品牌与 Hero 的 .editorial-shell 共用同一套页边距，
-          否则导航贴屏幕边、正文贴在 1.7× 页边，两套竖线会让编辑式栅格露馅。 */}
-      <div className="pointer-events-auto relative mx-auto w-full [padding-inline:var(--grid-margin)] lg:[padding-inline-start:calc(var(--grid-margin)*1.7)] lg:[padding-inline-end:calc(var(--grid-margin)*0.9)]">
-        <nav
-          aria-label="主导航"
-          className={cn(
-            "mx-auto flex w-full max-w-[var(--grid-max)] items-center justify-between gap-4",
-            "border-b py-3 transition-[background-color,border-color,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-            isScrolled
-              ? "py-2.5 border-[color:var(--color-rule-strong)] bg-[rgba(5,6,10,0.72)] backdrop-blur-xl"
-              : "border-[color:var(--color-rule)] bg-transparent",
-          )}
+      {/* 悬浮玻璃胶囊 */}
+      <nav
+        aria-label="主导航"
+        className={cn(
+          "glass-edge pointer-events-auto relative flex w-full items-center justify-between gap-2 overflow-hidden rounded-full border",
+          "transition-[max-width,padding,background-color,border-color,box-shadow,backdrop-filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          isScrolled
+            ? "max-w-4xl border-white/[0.14] bg-[rgba(7,9,16,0.72)] px-3 py-1.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_22px_60px_-28px_rgba(0,0,0,0.95),0_0_40px_-16px_rgba(124,92,255,0.55)] backdrop-blur-2xl backdrop-saturate-150"
+            : "max-w-5xl border-white/[0.08] bg-[rgba(9,11,20,0.42)] px-3 py-2.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_18px_50px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl backdrop-saturate-125",
+        )}
+      >
+        {/* 品牌 */}
+        <a
+          href="#hero"
+          onClick={() => handleNavigate("hero")}
+          className="group flex shrink-0 items-center gap-2 rounded-full pl-1 pr-2 py-0.5"
         >
-          {/* 品牌：编辑式 lockup —— 主名 + 极小宽字距副标，不用渐变方块 */}
-          <a
-            href="#hero"
-            onClick={() => handleNavigate("hero")}
-            className="group flex shrink-0 flex-col items-start leading-none"
+          <span
+            aria-hidden="true"
+            className={cn(
+              "relative grid place-items-center rounded-[0.7rem] bg-gradient-to-br from-[#8b6dff] via-[#7c5cff] to-[#4169ff] font-bold text-[#05060a]",
+              "shadow-[0_0_18px_-4px_rgba(124,92,255,0.9)] transition-all duration-500 group-hover:shadow-[0_0_26px_-2px_rgba(124,92,255,1)]",
+              isScrolled ? "h-7 w-7 text-[0.7rem]" : "h-8 w-8 text-xs",
+            )}
           >
-            <span
-              className={cn(
-                "font-black tracking-[-0.02em] text-foreground transition-all duration-500 group-hover:text-primary-soft",
-                isScrolled ? "text-[0.95rem] sm:text-base" : "text-base sm:text-[1.05rem]",
-              )}
-            >
+            KZ
+          </span>
+          <span className="flex flex-col items-start leading-none">
+            <span className="text-[0.86rem] font-bold tracking-tight text-foreground sm:text-sm">
               Kuang Zihao
             </span>
-            <span className="mt-1 label-caps hidden text-subtle sm:block">
+            <span className="mt-0.5 hidden text-[0.62rem] uppercase tracking-[0.28em] text-subtle sm:block">
               Portfolio
             </span>
-          </a>
+          </span>
+        </a>
 
-          {/* 桌面端导航：序号 + 名称，贴底细线高亮 */}
-          <div className="relative hidden items-end gap-5 md:flex">
-            {/* 高亮细线：位置/宽度来自 measureIndicator，只做 left/width 的过渡 */}
-            <span
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute bottom-0 h-px bg-primary-soft",
-                "transition-[left,width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                indicator.ready ? "opacity-100" : "opacity-0",
-              )}
-              style={{
-                left: `${indicator.left}px`,
-                width: `${indicator.width}px`,
-              }}
-            />
-            {navItems.map((item, index) => {
-              const isActive = activeId === item.id;
-              return (
-                <a
-                  key={item.id}
-                  ref={(node) => {
-                    linkRefs.current[index] = node;
-                  }}
-                  href={`#${item.id}`}
-                  onClick={() => handleNavigate(item.id)}
-                  data-fx-ripple=""
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "fx-ripple-host group/nav relative flex items-baseline gap-1.5 pb-2 pr-0.5 text-sm font-medium transition-colors duration-300",
-                    isActive ? "text-foreground" : "text-muted hover:text-foreground",
-                  )}
-                >
-                  {/* 序号：编辑式索引，与 Hero 的「01 / INTRO」同一套语言 */}
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "font-mono text-[0.6rem] tabular-nums transition-colors duration-300",
-                      isActive ? "text-primary-soft" : "text-subtle group-hover/nav:text-muted",
-                    )}
-                  >
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  {item.name}
-                </a>
-              );
-            })}
-          </div>
-
-          {/* 右侧动作区 */}
-          <div className="flex shrink-0 items-center gap-3">
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener"
-              data-fx-ripple=""
-              className="fx-ripple-host group hidden items-center gap-1.5 border-b border-transparent pb-0.5 text-xs font-medium text-muted transition-colors duration-300 hover:border-[color:var(--color-rule-strong)] hover:text-foreground sm:flex"
-            >
-              <GithubMark className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110" />
-              GitHub
-            </a>
-
-            {/* 主 CTA：与 GitHub 链接同一套语法 —— 纯文字 + 悬停下划线，
-                不写圆角胶囊、不写紫蓝渐变。导航是页面的"目录页"，
-                目录里的链接不需要按钮化的彩色块。 */}
-            <a
-              href="#contact"
-              onClick={() => handleNavigate("contact")}
-              className="group hidden items-center gap-1.5 text-xs font-semibold text-foreground md:inline-flex"
-            >
-              <span className="relative">
-                联系我
+        {/* 桌面端导航：滑块高亮 */}
+        <div className="relative hidden items-center gap-1 md:flex">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute top-1/2 -translate-y-1/2 rounded-full border border-white/[0.12] bg-white/[0.06]",
+              "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_0_22px_-8px_rgba(124,92,255,0.9)]",
+              "transition-[left,width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              indicator.ready ? "opacity-100" : "opacity-0",
+            )}
+            style={{
+              left: `${indicator.left}px`,
+              width: `${indicator.width}px`,
+              height: isScrolled ? "1.9rem" : "2.15rem",
+            }}
+          />
+          {navItems.map((item, index) => {
+            const isActive = activeId === item.id;
+            return (
+              <a
+                key={item.id}
+                ref={(node) => {
+                  linkRefs.current[index] = node;
+                }}
+                href={`#${item.id}`}
+                onClick={() => handleNavigate(item.id)}
+                data-fx-ripple=""
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "fx-ripple-host group/nav relative z-10 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-300",
+                  isActive
+                    ? "text-foreground [text-shadow:0_0_18px_rgba(185,166,255,0.55)]"
+                    : "text-muted hover:text-foreground",
+                )}
+              >
+                {item.name}
+                {/* 下划线：当前项常驻；hover 时从中间向两端展开 */}
                 <span
                   aria-hidden="true"
-                  className="absolute inset-x-0 -bottom-1 h-px origin-left scale-x-100 bg-rule-strong transition-transform duration-300 group-hover:scale-x-100"
+                  className={cn(
+                    "absolute inset-x-3 -bottom-0.5 h-px origin-center bg-gradient-to-r from-transparent via-primary-soft to-transparent transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    isActive ? "scale-x-100" : "scale-x-0 group-hover/nav:scale-x-100",
+                  )}
                 />
-              </span>
-              <span aria-hidden="true" className="text-cyan-soft">
-                →
-              </span>
-            </a>
+                {/* hover 光晕跟随：柔和的背后光斑 */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(124,92,255,0.28),transparent_70%)] opacity-0 blur-md transition-opacity duration-300 group-hover/nav:opacity-100"
+                />
+              </a>
+            );
+          })}
+        </div>
 
-            {/* 移动端菜单开关。
-                抽屉打开时**隐藏本按钮**：抽屉顶栏自带关闭按钮，两者位置几乎重合
-                （实测 326,20/40×40 与 329,23/36×36 叠在一起），会出现「两个 ×」。
-                用 opacity + pointer-events 隐藏而非 md:hidden，
-                这样关闭动画期间不会突然跳变；同时从可访问性树里移除。 */}
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen((prev) => !prev)}
-              aria-label={isMenuOpen ? "关闭菜单" : "打开菜单"}
-              aria-expanded={isMenuOpen}
-              aria-controls="mobile-nav-drawer"
-              aria-hidden={isMenuOpen}
-              tabIndex={isMenuOpen ? -1 : 0}
-              className={cn(
-                "grid h-9 w-9 place-items-center rounded-full text-foreground transition-all duration-300 md:hidden",
-                isMenuOpen
-                  ? "pointer-events-none scale-90 opacity-0"
-                  : "pointer-events-auto scale-100 opacity-100",
-              )}
-            >
-              {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </button>
-          </div>
-        </nav>
-      </div>
+        {/* 右侧动作区 */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener"
+            data-fx-ripple=""
+            className="fx-ripple-host group hidden items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-muted transition-all duration-300 hover:border-primary-soft/40 hover:bg-primary/[0.12] hover:text-foreground active:scale-95 sm:flex"
+          >
+            <GithubMark className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110" />
+            GitHub
+          </a>
 
-      {/* ---------- 移动端全屏玻璃抽屉（错峰进场） ----------
-          ⚠️ 逻辑区（锁滚动 / Esc / 焦点 / inert / aria）完全沿用原实现，不要在这一段做视觉重构。 */}
+          <a
+            href="#contact"
+            onClick={() => handleNavigate("contact")}
+            className="hidden rounded-full bg-gradient-to-r from-[#8b6dff] to-[#4169ff] px-4 py-1.5 text-xs font-bold text-[#05060a] shadow-[0_8px_24px_-12px_rgba(124,92,255,0.95)] transition-transform duration-300 hover:-translate-y-0.5 md:inline-flex"
+          >
+            联系我
+          </a>
+
+          {/* 移动端菜单开关。
+              抽屉打开时**隐藏本按钮**：抽屉顶栏自带关闭按钮，两者位置几乎重合
+              （实测 326,20/40×40 与 329,23/36×36 叠在一起），会出现「两个 ×」。
+              用 opacity + pointer-events 隐藏而非 md:hidden，
+              这样关闭动画期间不会突然跳变；同时从可访问性树里移除。 */}
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            aria-label={isMenuOpen ? "关闭菜单" : "打开菜单"}
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-nav-drawer"
+            aria-hidden={isMenuOpen}
+            tabIndex={isMenuOpen ? -1 : 0}
+            className={cn(
+              "grid h-9 w-9 place-items-center rounded-full border border-white/[0.1] bg-white/[0.04] text-foreground transition-all duration-300 hover:border-primary-soft/40 hover:bg-primary/[0.12] md:hidden",
+              isMenuOpen
+                ? "pointer-events-none scale-90 opacity-0"
+                : "pointer-events-auto scale-100 opacity-100",
+            )}
+          >
+            {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+        </div>
+      </nav>
+
+      {/* ---------- 移动端全屏玻璃抽屉（错峰进场） ---------- */}
       <div
         id="mobile-nav-drawer"
         role="dialog"
@@ -357,36 +343,26 @@ export default function Navbar() {
           <div className="flex items-center justify-between">
             <span
               className={cn(
-                "label-caps text-subtle transition-all duration-500",
+                "text-[0.68rem] uppercase tracking-[0.4em] text-subtle transition-all duration-500",
                 isMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0",
               )}
               style={{ transitionDelay: isMenuOpen ? "80ms" : "0ms" }}
             >
               Navigation
             </span>
-            {/* ⚠️ 关闭按钮的可见性必须由 isMenuOpen 驱动。
-                父级的 aria-hidden / inert 只影响可访问性与交互，**不产生视觉隐藏**：
-                早期版本漏了这一层，抽屉未打开时这个 × 仍以 opacity:1 渲染，
-                与右上角的汉堡叠成「双按钮」（375px 实测两个都可见）。
-                这里同时管 opacity + pointer-events，并保留父级 inert / aria-hidden。 */}
             <button
               ref={closerRef}
               type="button"
               onClick={() => setIsMenuOpen(false)}
               aria-label="关闭菜单"
-              className={cn(
-                "grid h-10 w-10 place-items-center rounded-full text-foreground transition-[opacity,color,transform] duration-300 hover:text-primary-soft",
-                isMenuOpen
-                  ? "pointer-events-auto scale-100 opacity-100"
-                  : "pointer-events-none scale-90 opacity-0",
-              )}
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/[0.12] bg-white/[0.05] text-foreground transition-colors duration-300 hover:border-primary-soft/40 hover:bg-primary/[0.14]"
             >
               <X className="h-4.5 w-4.5" />
             </button>
           </div>
 
-          {/* 错峰进场导航项：编辑式行式列表（序号 + 名称 + 细线分隔） */}
-          <nav aria-label="移动端导航项" className="mt-10 flex flex-1 flex-col justify-center">
+          {/* 错峰进场导航项 */}
+          <nav aria-label="移动端导航项" className="mt-10 flex flex-1 flex-col justify-center gap-2">
             {navItems.map((item, index) => {
               const isActive = activeId === item.id;
               const delay = isMenuOpen ? 140 + index * 70 : 0;
@@ -397,21 +373,17 @@ export default function Navbar() {
                   onClick={() => handleNavigate(item.id)}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "group flex items-baseline justify-between border-t py-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    "border-[color:var(--color-rule)]",
+                    "group flex items-center justify-between rounded-2xl border px-5 py-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                     isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
-                    isActive ? "text-foreground" : "text-muted",
+                    isActive
+                      ? "border-primary-soft/30 bg-primary/[0.12] text-foreground shadow-[0_0_32px_-16px_rgba(124,92,255,0.9)]"
+                      : "border-white/[0.07] bg-white/[0.02] text-muted",
                   )}
                   style={{ transitionDelay: `${delay}ms` }}
                 >
                   <span className="flex items-baseline gap-3">
-                    <span
-                      className={cn(
-                        "font-mono text-[0.65rem] tabular-nums tracking-[0.2em]",
-                        isActive ? "text-primary-soft" : "text-subtle",
-                      )}
-                    >
-                      {String(index + 1).padStart(2, "0")}
+                    <span className="font-mono text-[0.65rem] tracking-[0.2em] text-subtle">
+                      0{index + 1}
                     </span>
                     <span className="text-xl font-bold tracking-tight">{item.name}</span>
                   </span>
@@ -427,14 +399,12 @@ export default function Navbar() {
                 </a>
               );
             })}
-            {/* 收尾线：让列表底部也有一条线，行式版面才闭合 */}
-            <span aria-hidden="true" className="rule-hair" />
           </nav>
 
           {/* 抽屉底部 */}
           <div
             className={cn(
-              "mt-6 flex flex-col gap-4 border-t border-[color:var(--color-rule)] pt-5 transition-all duration-500",
+              "flex flex-col gap-4 border-t border-white/[0.08] pt-5 transition-all duration-500",
               isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
             )}
             style={{ transitionDelay: isMenuOpen ? `${140 + navItems.length * 70}ms` : "0ms" }}
@@ -443,13 +413,13 @@ export default function Navbar() {
               href={GITHUB_URL}
               target="_blank"
               rel="noopener"
-              className="flex items-center justify-center gap-2 border-b border-[color:var(--color-rule)] pb-3 text-sm font-medium text-foreground transition-colors duration-300 hover:text-primary-soft"
+              className="flex items-center justify-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.03] px-4 py-3 text-sm font-medium text-foreground transition-colors duration-300 hover:border-primary-soft/40 hover:bg-primary/[0.12]"
             >
               <GithubMark className="h-4 w-4" />
               github.com/Anyeling0620
             </a>
-            <p className="label-caps text-subtle">
-              Kuang Zihao · Fullstack
+            <p className="text-center text-[0.68rem] tracking-[0.2em] text-subtle">
+              KUANG ZIHAO · FULLSTACK
             </p>
           </div>
         </div>
