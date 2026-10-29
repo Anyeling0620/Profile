@@ -123,7 +123,10 @@ export default function HeroSection() {
         <div ref={glow3Ref} className="absolute bottom-[-12%] left-[-8%]">
           <div className="h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.2)_0%,rgba(34,211,238,0.14)_16%,rgba(34,211,238,0.08)_32%,rgba(34,211,238,0.035)_46%,rgba(34,211,238,0.01)_58%,transparent_72%)] animate-[float_11s_ease-in-out_infinite_1.2s] motion-reduce:animate-none" />
         </div>
-        {/* 透视地平线网格 + 细网格 */}
+        {/* 透视地平线网格 + 细网格
+            炫酷强化：新增一层 hud-horizon（44px 更密的透视网格）叠在地平线处，
+            让纵深更明确；原 grid-perspective/grid-mesh 保留作为底层结构。 */}
+        <div className="hud-horizon absolute inset-x-0 bottom-0 h-[30vh] opacity-[0.42]" aria-hidden="true" />
         <div className="grid-perspective absolute inset-x-0 bottom-0 h-[38vh] opacity-60" />
         <div className="grid-mesh absolute inset-0 opacity-[0.55]" />
 
@@ -145,15 +148,16 @@ export default function HeroSection() {
 
       <div className="container relative z-10">
         <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-          {/* 状态胶囊：视差层 + 进场层 */}
+          {/* 状态胶囊：视差层 + 进场层
+              炫酷强化：圆胶囊 → 切角 HUD 徽标，脉冲圆点 → 方波指示灯。
+              「可接受新的合作」本身是一条**状态信号**，用指示灯语法比圆胶囊更对味。 */}
           <div ref={badgeRef}>
             <div className="animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none">
-              <span className="glass-card glass-edge inline-flex items-center gap-2 rounded-full border-white/[0.12] px-3.5 py-1.5 text-[0.72rem] tracking-[0.12em] text-muted">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan opacity-70" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
-                </span>
-                可接受新的合作 · 全栈开发
+              <span className="glass-card chamfer-sm inline-flex items-center gap-2.5 border-white/[0.14] px-4 py-1.5 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted">
+                <span className="hud-pulse" aria-hidden="true" />
+                <span className="text-cyan-soft">ONLINE</span>
+                <span className="text-white/15">/</span>
+                可接受新的合作
               </span>
             </div>
           </div>
@@ -184,19 +188,49 @@ export default function HeroSection() {
               避免副标题按行框边界上移后压住字形。 */}
           <h1 className="mt-6 text-[clamp(2.6rem,9vw,5.6rem)] font-black leading-[1.12] tracking-[-0.035em] sm:mt-7 lg:mt-8">
             <span className="sr-only">{NAME}</span>
-            <span
-              aria-hidden="true"
-              className="aurora-text inline-flex flex-wrap items-baseline justify-center gap-x-[0.24em] pb-[0.12em] drop-shadow-[0_0_38px_rgba(124,92,255,0.35)]"
-            >
-              {NAME.split(" ").map((word, i) => (
-                <span
-                  key={word}
-                  className="fx-clip-reveal inline-block"
-                  style={{ "--fx-delay": `${160 + i * 115}ms` }}
-                >
-                  {word}
-                </span>
-              ))}
+            {/* 炫酷强化：真实三层色散（chromatic aberration）
+                ⚠️ 关键约束（代码注释里记录过的坑，不要重犯）：
+                aurora-text 依赖 background-clip:text，文字 fill 本身是透明的，
+                所以 text-shadow 画在透明字形后面几乎不可见（上一版就栽在这）。
+                改用「三个绝对定位的文字层」做红/青分离 + 一个主体渐变层：
+                  - 两个色散层是**实色**（不含渐变、无 clip），所以不会互相干扰
+                  - 主体层保持 aurora-text 渐变
+                  - 色散层偏移 ±3px 并加 mix-blend-mode: screen，产生发光叠加
+                可访问性：全部 aria-hidden，真实文本由外层 sr-only 提供（不变）。 */}
+            <span className="relative inline-flex flex-wrap items-baseline justify-center gap-x-[0.24em] pb-[0.12em]">
+              {/* 红色色散层（左偏） */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-0 flex flex-wrap items-baseline justify-center gap-x-[0.24em] text-[#ff3c78] opacity-70 [transform:translate(-4px,-1px)] blur-[0.6px]"
+              >
+                {NAME.split(" ").map((word) => (
+                  <span key={`r-${word}`} className="inline-block">{word}</span>
+                ))}
+              </span>
+              {/* 青色色散层（右偏） */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-0 flex flex-wrap items-baseline justify-center gap-x-[0.24em] text-[#3ce8ff] opacity-65 [transform:translate(4px,1px)] blur-[0.6px]"
+              >
+                {NAME.split(" ").map((word) => (
+                  <span key={`c-${word}`} className="inline-block">{word}</span>
+                ))}
+              </span>
+              {/* 主体渐变层 */}
+              <span
+                aria-hidden="true"
+                className="aurora-text relative z-10 inline-flex flex-wrap items-baseline justify-center gap-x-[0.24em] [filter:drop-shadow(0_0_30px_rgba(124,92,255,0.55))_drop-shadow(0_0_70px_rgba(65,105,255,0.35))]"
+              >
+                {NAME.split(" ").map((word, i) => (
+                  <span
+                    key={word}
+                    className="fx-clip-reveal inline-block"
+                    style={{ "--fx-delay": `${160 + i * 115}ms` }}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </span>
             </span>
           </h1>
 

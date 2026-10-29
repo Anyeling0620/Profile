@@ -399,6 +399,15 @@ export default function AuroraBackground() {
         }}
       />
 
+      {/* 0.5 全站 HUD 扫描光带（炫酷强化层）
+          一条极淡的水平光带 14 秒一轮自上而下扫过视口。
+          为什么值得加：页面其余元素都是「静态构图 + 缓慢漂移」，
+          唯一的持续线性运动就是这个扫描 —— 它把页面从「一张图」
+          变成「一台在运行的设备」。强度刻意压到 0.05~0.075，
+          只做氛围，不参与文字对比度计算（纯 aria-hidden 装饰层）。
+          性能：单元素，只动 transform，走合成层；reduced-motion 下 CSS 直接 display:none。 */}
+      <div className="hud-shimmer" />
+
       {/* 1. 远景极光光带
           性能：这里刻意**不用 filter: blur()**。实测（Chromium，1440×900）
           对超大元素同时施加 blur + transform/scale 动画会把帧间隔从 16.7ms 拉到

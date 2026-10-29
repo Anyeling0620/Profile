@@ -67,7 +67,16 @@ const levelLabel = (level) => {
 
 export default function SkillsSection() {
   const [activeCategory, setActiveCategory] = useState("all");
-  const [listRef, inView] = useInView({ threshold: 0.1 });
+  /* ⚠️ 必须 threshold 0 + 正向 rootMargin 预取，不能用 0.1。
+     原版这里写 0.1，在移动端会出真实故障：技能区在 375px 下高达 7000+ px，
+     可见比例永远达不到 10%，IntersectionObserver 永远不回调 true，
+     于是整片卡片永久停在 opacity-0、计数停在 0，表现为「滚到技能区一片空白」。
+     （桌面 1440 下区块较矮、比例容易达成，所以这个 bug 长期只在手机上出现。）
+     threshold 0 + 向下 200px 预取 = 区块顶部接近视口就算命中，三条路径都稳。 */
+  const [listRef, inView] = useInView({
+    threshold: 0,
+    rootMargin: "200px 0px 0px 0px",
+  });
 
   const filteredSkills = useMemo(
     () =>
@@ -157,17 +166,28 @@ export default function SkillsSection() {
                 as="article"
                 max={6}
                 className={cn(
-                  "group glass-card relative overflow-hidden p-5 text-left",
+                  /* 炫酷强化：圆柱角改为**切角**（HUD 面板标志性形状），
+                     并叠 hud-corners 的 L 形角标。
+                     为什么保留 glass-card：玻璃底是原站的视觉资产，
+                     切角 + 角标只是给它换上「军用终端」的轮廓，
+                     不是推翻，而是加锐度。 */
+                  "group glass-card chamfer chamfer-edge relative overflow-hidden p-5 text-left",
+                  "hud-corners",
                   inView
                     ? "animate-[tilt-in_0.55s_cubic-bezier(0.22,1,0.36,1)_both]"
                     : "opacity-0",
                 )}
                 style={{ animationDelay: `${delay}ms` }}
               >
-                {/* 悬停时的左上角极光渗色 */}
+                {/* 悬停时的左上角极光渗色（强度略提，配合更强的悬停辉光） */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#7c5cff]/[0.14] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#7c5cff]/[0.18] via-[#4169ff]/[0.06] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                />
+                {/* HUD 扫描线：贴在卡片底层的细密横纹，悬停时浮现 */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 hud-scanlines opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                 />
 
                 <div className="relative flex items-baseline justify-between gap-3">
@@ -179,18 +199,17 @@ export default function SkillsSection() {
                   </span>
                 </div>
 
-                {/* 能量条：进入视口才生长（scaleX 关键帧 + 内联目标宽度）
-                    发光尾巴用「条尾高光点」实现，不额外增加动画面板。 */}
-                <div className="progress-track relative mt-4">
+                {/* 能量条（炫酷强化）：
+                    原来是「平滑渐变胶囊条」—— 纯装饰性色带，读起来像进度提示。
+                    现在换成**分段刻度仪表**：12 格暗缝刻度 + 直角 + 扫动光尾，
+                    信息密度带来的科技感远高于纯装饰的渐变条。
+                    动效沿用原有的 progress-grow（只动 scaleX，走合成层），
+                    额外加一层 energy-scan 光尾循环掠过，纯 CSS 无 rAF。 */}
+                <div className="energy-track group/bar mt-4">
                   <div
-                    className={cn(
-                      "progress-fill relative",
-                    )}
+                    className="energy-fill relative overflow-hidden"
                     style={{
                       width: `${skill.level}%`,
-                      /* .progress-fill 在 index.css 里自带 animation（加载即播完），
-                         这里用内联 animation 覆盖，确保「进入视口才生长」，
-                         切换分类时因 key 变化重新挂载而重播。 */
                       animation: inView
                         ? `progress-grow 1.25s cubic-bezier(0.22,1,0.36,1) ${delay + 90}ms both`
                         : "none",
@@ -198,12 +217,15 @@ export default function SkillsSection() {
                       transformOrigin: "left center",
                     }}
                   >
-                    {/* 条尾高光点 */}
-                    <span
-                      aria-hidden="true"
-                      className="absolute right-0 top-1/2 h-2 w-2 -translate-y-1/2 translate-x-1/2 rounded-full bg-cyan-soft opacity-0 shadow-[0_0_10px_2px_rgba(126,231,245,0.75)] transition-opacity duration-500 group-hover:opacity-100"
-                    />
+                    {/* 光尾扫动：窄亮带循环掠过条身 */}
+                    <span aria-hidden="true" className="energy-scan" />
                   </div>
+                  {/* 条尾高光点：跟随数值末端，悬停更亮 */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-none bg-cyan-soft opacity-0 shadow-[0_0_12px_3px_rgba(126,231,245,0.8)] transition-opacity duration-500 group-hover:opacity-100"
+                    style={{ left: `calc(${skill.level}% - 4px)` }}
+                  />
                 </div>
 
                 <div className="relative mt-2 flex items-center justify-between">

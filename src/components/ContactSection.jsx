@@ -145,7 +145,7 @@ export default function ContactSection() {
         <div className="mt-14 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
           {/* 左：联系方式 + 社交 */}
           <div className="flex flex-col justify-center gap-6">
-            <div className="glass-card glass-edge p-6 sm:p-8">
+            <div className="glass-card glass-edge chamfer chamfer-edge p-6 sm:p-8">
               <h3 className="text-lg font-bold text-foreground sm:text-xl">联系方式</h3>
 
               <div className="mt-6 flex flex-col gap-3">
@@ -198,7 +198,7 @@ export default function ContactSection() {
             </div>
 
             {/* 社交平台：原图标与链接结构保留，只加玻璃底座 */}
-            <div className="glass-card p-6">
+            <div className="glass-card chamfer-sm p-6">
               <h4 className="text-sm font-medium text-foreground">社交平台</h4>
               <div className="mt-4 flex items-center gap-3">
                 <a
@@ -275,7 +275,7 @@ export default function ContactSection() {
           </div>
 
           {/* 右：表单（玻璃输入框 + 聚焦光晕 + 提交动效） */}
-          <div className="glass-card glass-edge noise-overlay relative overflow-hidden p-6 sm:p-8">
+          <div className="glass-card glass-edge chamfer chamfer-edge noise-overlay relative overflow-hidden p-6 sm:p-8">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(124,92,255,0.22),transparent_70%)] blur-2xl"

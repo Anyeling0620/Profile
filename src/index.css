@@ -1124,3 +1124,353 @@
     --color-subtle: #aeb5d2;
   }
 }
+
+/* ============================================================
+   =======  炫酷强化层 / HUD & ENERGY SYSTEM  =======
+   ------------------------------------------------------------
+   设计前提（重要）：
+   原站已有大量「柔光晕染」（渐变光斑、blur、玻璃、极光漂移）。
+   这些元素共同的问题是**锐度不足**——全是低对比的柔和过渡，
+   远了看只是一团发光的雾。真正的「炫酷」不是继续加光晕，
+   而是引入一种互补的视觉语法：**锐利、高对比、有信息密度**。
+
+   所以这一层只做四种「锐器」，全部是硬边或高对比：
+     1. 切角（chamfer）      —— 用 clip-path 切掉角，替代圆角
+     2. 扫描线（scanline）   —— 细密横线，HUD 屏感
+     3. 色散/glitch          —— 红青分离，只在关键文字上短暂闪现
+     4. 能量条（energy bar） —— 分段刻度 + 光尾扫动，替代平滑渐变条
+
+   性能约束（沿用本工程既有纪律）：
+     - 只动 transform / opacity / background-position，不碰布局属性
+     - 全部带 prefers-reduced-motion 降级到静态终态
+     - 不新增任何 rAF 循环，扫动靠 CSS 关键帧
+   ============================================================ */
+
+/* ---------- 1. 切角：替代圆角的 HUD 边框 ----------
+   科幻/HUD 界面的标志性形状是「切角」而非圆角。
+   在深色底上用 clip-path 切掉右上与左下两个角，
+   视觉上立刻从「消费级 SaaS 圆角卡」变成「军用终端面板」。
+   注意：clip-path 会裁掉外发光，所以需要光影时用内阴影或伪元素补偿。 */
+@utility chamfer {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 20px) 0,
+    100% 20px,
+    100% 100%,
+    20px 100%,
+    0 calc(100% - 20px)
+  );
+}
+
+/* 小切角：用于按钮/标签这类小尺寸元素 */
+@utility chamfer-sm {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 6px) 0,
+    100% 6px,
+    100% 100%,
+    6px 100%,
+    0 calc(100% - 6px)
+  );
+}
+
+/* 反切角：左上/右下切，用于需要区分层级的元素（错落感） */
+@utility chamfer-alt {
+  clip-path: polygon(
+    10px 0,
+    100% 0,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    0 100%,
+    0 10px
+  );
+}
+
+/* ---------- 2. 扫描线（HUD 屏感） ----------
+   细密横向栅格，模拟 CRT / 战术面板的扫描纹。
+   用 repeating-linear-gradient 做，纯静态纹理（不产生动画开销）。
+   强度必须压得很低（0.04~0.06）：这是「氛围」不是「主角」，
+   超过 0.12 就会让文字发灰、影响可读性。 */
+@utility hud-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.045) 0px,
+    rgb(255 255 255 / 0.045) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* 竖栅格：与技术拾取的「纵向刻度」配对 */
+@utility hud-grid-fine {
+  background-image:
+    repeating-linear-gradient(to right, rgb(124 92 255 / 0.07) 0 1px, transparent 1px 32px),
+    repeating-linear-gradient(to bottom, rgb(124 92 255 / 0.07) 0 1px, transparent 1px 32px);
+}
+
+/* ---------- 3. 数据切角框（HUD 面板外观） ----------
+   组合「切角 + 1px 描边 + 内发光」，一次性给出面板感。
+   为什么不用 border：clip-path 会裁掉 border 的角落，看起来像断了。
+   改用 inset box-shadow 模拟描边，能完美跟随切角轮廓。 */
+/* 切角描边：clip-path 会裁掉普通 border，所以用伪元素沿轮廓画 1px 线。
+   这是让「切角」真正被看见的关键 —— 没有描边时，深色卡片切角与背景几乎同色，
+   视觉上等于没切。加描边后轮廓立刻锐利，是 HUD 面板的灵魂。 */
+@utility chamfer-edge {
+  position: relative;
+  /* 描边用**外描边 + 负 offset**，而不是 inset 内阴影。
+     实测坑：父元素 clip-path 会把子伪元素的 inset 描边一起裁到轮廓外侧，
+     结果描边完全不可见。改成 outline + outline-offset:-1px 后，
+     描边落在裁切轮廓内侧 1px，能被真实渲染出来。
+     再叠一层 inset 光晕做「面板内胆」。 */
+  outline: 1px solid rgb(124 92 255 / 0.5);
+  outline-offset: -1px;
+  box-shadow: inset 0 0 24px -10px rgb(126 231 245 / 0.4);
+}
+
+@utility hud-panel {
+  position: relative;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+  background-color: rgb(10 12 21 / 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgb(124 92 255 / 0.22),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(14px);
+}
+
+/* ---------- 4. 色散文字（glitch 色散） ----------
+   红/青双色偏移是现代「故障美学」最克制的表达：
+   不做真正的 glitch 闪跳（那会很吵），只做**静态色散**——
+   文字左右各有一层极淡的红与青残影。
+   用两个伪元素而非堆三个 DOM 节点，避免污染可访问性树。
+   注意：依赖 attr(data-text)，调用处必须同时提供 data-text 属性。 */
+@utility chroma-text {
+  position: relative;
+  text-shadow:
+    -1.5px 0 rgb(255 60 120 / 0.55),
+    1.5px 0 rgb(60 232 255 / 0.5),
+    0 0 28px rgb(124 92 255 / 0.45);
+}
+
+/* 色散 + 光晕加强版：用于超大标题，让边缘有真实的「发光溢出」 */
+@utility chroma-text-lg {
+  text-shadow:
+    -2px 0 rgb(255 60 120 / 0.5),
+    2px 0 rgb(60 232 255 / 0.45),
+    0 0 42px rgb(124 92 255 / 0.55),
+    0 0 84px rgb(65 105 255 / 0.32);
+}
+
+/* ---------- 5. 能量条（分段刻度 + 光尾扫动） ----------
+   替代原来的「平滑渐变胶囊条」。
+   三条硬边特征：
+     - 分段：repeating-linear-gradient 做 12 格刻度（读起来像仪表）
+     - 硬边：去掉 border-radius，直角
+     - 光尾：条尾一道亮线，随能量推进
+   为什么比渐变条炫：渐变条只是「装饰性色带」，刻度条是「仪表读数」，
+   信息密度带来的科技感远高于纯装饰。 */
+@utility energy-track {
+  position: relative;
+  height: 0.85rem;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  /* 底槽是深色，让上面的能量条更「跳」 */
+  background-color: rgb(6 8 14 / 0.9);
+  /* 12 格刻度：格缝用**亮色**而非暗色 —— 暗缝在深底上看不见，
+     亮缝才能读出「分段仪表」的机械感。 */
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(100% / 12 - 2px),
+    rgb(126 231 245 / 0.28) calc(100% / 12 - 2px),
+    rgb(126 231 245 / 0.28) calc(100% / 12)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgb(124 92 255 / 0.35),
+    inset 0 1px 3px rgb(0 0 0 / 0.8);
+}
+
+/* 能量填充：高饱和渐变 + 网格刻度覆盖 + 条尾光点 */
+@utility energy-fill {
+  position: relative;
+  height: 100%;
+  transform-origin: left center;
+  border-radius: 0;
+  /* 更饱和、更亮的渐变：紫 → 亮蓝 → 青，末端接近白，形成「能量最热处」 */
+  background-image: linear-gradient(
+    90deg,
+    #7c5cff 0%,
+    #4169ff 38%,
+    #22d3ee 72%,
+    #a5f3ff 100%
+  );
+  /* 叠一层竖向细纹，让填充面有「能量流」的质感而不是纯色块 */
+  background-size: 100% 100%, 6px 100%;
+  box-shadow:
+    0 0 10px rgb(124 92 255 / 0.9),
+    0 0 24px rgb(65 105 255 / 0.6),
+    0 0 44px rgb(34 211 238 / 0.35);
+}
+
+/* 光尾扫动：一条高亮窄带在能量条上循环掠过（纯 CSS，无 rAF） */
+@utility energy-scan {
+  position: absolute;
+  inset-block: 0;
+  width: 34%;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.5) 50%,
+    transparent 100%
+  );
+  animation: energy-sweep 2.4s var(--ease-in-out-soft) infinite;
+  pointer-events: none;
+}
+
+@keyframes energy-sweep {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.85;
+  }
+  82% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(340%);
+    opacity: 0;
+  }
+}
+
+/* ---------- 6. 边角标记（HUD 角标） ----------
+   四个角落各一个 L 形细线角标，是最省成本、最提「面板感」的元素。
+   用伪元素画 L 形：只画两条边（上+左、或下+右），互相错开。 */
+@utility hud-corners {
+  position: relative;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: 0.7rem;
+    height: 0.7rem;
+    pointer-events: none;
+    border-color: rgb(126 231 245 / 0.5);
+    border-style: solid;
+  }
+
+  &::before {
+    top: 0;
+    left: 0;
+    border-width: 1px 0 0 1px;
+  }
+
+  &::after {
+    right: 0;
+    bottom: 0;
+    border-width: 0 1px 1px 0;
+  }
+}
+
+/* ---------- 7. 状态脉冲点 ----------
+   已有的 ping 是柔和扩散。这里做「方波脉冲」：硬边方块闪烁，
+   像设备指示灯，比圆点更有机械感。 */
+@utility hud-pulse {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  background-color: var(--color-cyan-soft);
+  box-shadow: 0 0 10px 2px rgb(126 231 245 / 0.7);
+  animation: hud-pulse-blink 1.6s steps(2, end) infinite;
+}
+
+@keyframes hud-pulse-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+/* ---------- 8. 网格背景强化（Hero 专用） ----------
+   原 grid-mesh 是 0.55 透明度细线。这里做「双层网格 + 透视压缩」，
+   让地平线更有纵深。 */
+@utility hud-horizon {
+  background-image:
+    linear-gradient(to right, rgb(124 92 255 / 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(124 92 255 / 0.14) 1px, transparent 1px);
+  background-size: 44px 44px;
+  transform: perspective(420px) rotateX(58deg);
+  transform-origin: bottom center;
+}
+
+/* ---------- 9. 全站 HUD 扫描光带 ----------
+   一条极淡的水平光带在整个视口内自上而下缓慢扫过（14 秒一轮）。
+   这是 HUD / 战术屏最典型的「活着的界面」信号：
+   静态页面无论渐变多漂亮都是「图片」，一条持续扫过的光是「设备在运行」。
+   强度必须很低（峰值约 0.055）：它是氛围不是主角，抢戏就会变成噪声。
+   性能：只动 transform，纯合成层；reduced-motion 下直接隐藏。 */
+@utility hud-shimmer {
+  position: absolute;
+  inset-inline: 0;
+  height: 38vh;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(124 92 255 / 0.05) 32%,
+    rgb(126 231 245 / 0.075) 50%,
+    rgb(124 92 255 / 0.05) 68%,
+    transparent 100%
+  );
+  animation: hud-shimmer-sweep 14s linear infinite;
+  will-change: transform;
+}
+
+@keyframes hud-shimmer-sweep {
+  0% {
+    transform: translateY(-40vh);
+  }
+  100% {
+    transform: translateY(105vh);
+  }
+}
+
+/* ---------- 10. 悬浮 HUD 边框（用于强调块） ----------
+   双层描边：外层紫色 1px + 内层青色 1px（内嵌 2px），做出「机箱灯带」的层次。
+   比单层 1px 边框更有体积感，成本仍只有一个元素。 */
+@utility hud-frame {
+  position: relative;
+  box-shadow:
+    inset 0 0 0 1px rgb(124 92 255 / 0.4),
+    inset 0 0 0 3px rgb(126 231 245 / 0.12),
+    0 0 24px -8px rgb(124 92 255 / 0.7);
+}
+
+/* ---------- 降级：reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .energy-scan {
+    animation: none;
+    opacity: 0.35;
+  }
+  .hud-pulse {
+    animation: none;
+    opacity: 1;
+  }
+  /* 全站扫描光带在减弱动效下直接隐藏：它是纯氛围层，没有信息价值 */
+  .hud-shimmer {
+    animation: none;
+    display: none;
+  }
+}

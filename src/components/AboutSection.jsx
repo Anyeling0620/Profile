@@ -33,7 +33,12 @@ const capabilities = [
 ];
 
 export default function AboutSection() {
-  const [sectionRef, inView] = useInView({ threshold: 0.08 });
+  /* 同技能区的坑：超高区块用可见比例判定会永不命中（移动端整块空白）。
+     降到 0.01 + 200px 预取，只要顶部露头就揭示。 */
+  const [sectionRef, inView] = useInView({
+    threshold: 0.01,
+    rootMargin: "200px 0px 0px 0px",
+  });
 
   /* 进场：位移 + 淡入；delay 用于编排先后，duration 统一走 --ease-out-expo 同款曲线 */
   const revealClass = () =>
@@ -76,7 +81,7 @@ export default function AboutSection() {
           <div className="flex flex-col justify-center gap-6">
             <div
               className={cn(
-                "glass-card glass-edge relative overflow-hidden p-7 sm:p-9",
+                "glass-card glass-edge chamfer chamfer-edge relative overflow-hidden p-7 sm:p-9",
                 revealClass(),
               )}
               style={revealStyle(70)}
@@ -145,7 +150,7 @@ export default function AboutSection() {
                   as="article"
                   max={6}
                   className={cn(
-                    "group glass-card relative overflow-hidden p-6 text-left",
+                    "group glass-card chamfer chamfer-edge hud-corners relative overflow-hidden p-6 text-left",
                     "hover:-translate-y-1",
                     revealClass(),
                   )}
