@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import MagneticButton from "./fx/MagneticButton";
 
@@ -14,20 +14,15 @@ const initialFormData = {
 };
 
 /* 联系方式：原先三条「图标底座 + 标签 + 值」的同构条目，
-   改造为「标签 : 值」的 tabular 对齐表。邮箱/电话仍是可点击链接（保留 mailto:/tel:），
-   只是不再套圆角玻璃盒，改由细线分行——编辑式版面的结构色只有线，没有盒子。 */
+   改造为「标签 : 值」的 tabular 对齐表。邮箱仍是可点击链接（保留 mailto:），
+   只是不再套圆角玻璃盒，改由细线分行——编辑式版面的结构色只有线，没有盒子。
+   电话一栏已移除：原先值是占位符「+86 none」，与其让占位词上屏，不如不展示。 */
 const contactRows = [
   {
     icon: Mail,
     label: "邮箱",
     value: "3463645195@qq.com",
     href: "mailto:3463645195@qq.com",
-  },
-  {
-    icon: Phone,
-    label: "电话",
-    value: "+86 none",
-    href: "tel:+86",
   },
   {
     icon: MapPin,
@@ -190,7 +185,7 @@ export default function ContactSection() {
                   值在窄栏里右对齐，读起来像简历/杂志的资料栏。 */}
               {/* 结构说明：dl 的直接子元素必须是 dt/dd 或包住它们的 div，
                   所以每行用 div 承载两列；链接放在 dd 内部而不是包住整行，
-                  这样既保住 mailto:/tel: 的可点击性，也不破坏 dl 的语义。 */}
+                  这样既保住 mailto: 链接的可点击性，也不破坏 dl 的语义。 */}
               <dl className="mt-4 flex flex-col">
                 {contactRows.map((row) => {
                   const Icon = row.icon;
