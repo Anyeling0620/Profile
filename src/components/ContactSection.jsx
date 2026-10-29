@@ -1,9 +1,10 @@
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import MagneticButton from "./fx/MagneticButton";
 
 import { useToast } from "../hooks/useToast";
 import { getContactMessageCooldown, sendContactMessage } from "../lib/contact";
+import { formatIndex } from "../lib/editorial";
 import { cn } from "../lib/utils";
 
 const initialFormData = {
@@ -11,6 +12,25 @@ const initialFormData = {
   user_email: "",
   message: "",
 };
+
+/* 联系方式：原先三条「图标底座 + 标签 + 值」的同构条目，
+   改造为「标签 : 值」的 tabular 对齐表。邮箱仍是可点击链接（保留 mailto:），
+   只是不再套圆角玻璃盒，改由细线分行——编辑式版面的结构色只有线，没有盒子。
+   电话一栏已移除：原先值是占位符「+86 none」，与其让占位词上屏，不如不展示。 */
+const contactRows = [
+  {
+    icon: Mail,
+    label: "邮箱",
+    value: "3463645195@qq.com",
+    href: "mailto:3463645195@qq.com",
+  },
+  {
+    icon: MapPin,
+    label: "位置",
+    value: "中国，山东",
+    href: null,
+  },
+];
 
 export default function ContactSection() {
   const { toast } = useToast();
@@ -113,98 +133,100 @@ export default function ContactSection() {
     }, 1500);
   };
 
-  /* 仅用于渲染的视觉配置：不参与任何提交逻辑 */
+  /* 仅用于渲染的视觉配置：不参与任何提交逻辑。
+     编辑式输入框：无边框盒、无底色、无玻璃模糊，只留一条底线；聚焦时底线换成
+     极光青并叠一层极窄的底部辉光。去掉「厚重玻璃边框」正是本轮的验收项之一。
+     保留 disabled 态样式，提交中仍能看出控件被锁。
+     注意：字色 / placeholder 走底层的语义色，不在这里改对比度。 */
   const fieldShell =
-    "w-full rounded-xl border border-white/[0.1] bg-white/[0.035] px-4 py-3 text-sm text-foreground placeholder:text-subtle/70 backdrop-blur-md transition-all duration-300 outline-none focus:border-primary-soft/55 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(124,92,255,0.18),0_0_28px_-8px_rgba(124,92,255,0.6)] disabled:cursor-not-allowed disabled:opacity-60";
+    "w-full border-b border-rule-strong bg-transparent px-0 py-2.5 text-sm text-foreground placeholder:text-subtle/70 outline-none transition-[border-color,box-shadow] duration-300 focus:border-cyan-soft focus:shadow-[0_1px_0_0_rgba(34,211,238,0.55)] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <section id="contact" className="relative overflow-hidden px-4 py-24 md:py-32">
+    /* editorial-shell：非对称页边 + 文本左对齐（压掉 #root 的 text-align:center） */
+    <section
+      id="contact"
+      className="editorial-shell relative overflow-hidden py-24 md:py-32"
+    >
       {/* 板块级极光点缀 */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-[-6%] h-[26rem] w-[44rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(124,92,255,0.18),transparent_70%)] blur-[110px]" />
-        <div className="absolute bottom-[-8%] left-[-6%] h-[22rem] w-[22rem] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.12),transparent_72%)] blur-[100px]" />
-        <div className="grid-mesh absolute inset-0 opacity-40" />
+        <div className="absolute left-1/3 top-[-6%] h-[26rem] w-[44rem] -translate-x-1/3 rounded-full bg-[radial-gradient(circle,rgba(124,92,255,0.16),transparent_70%)] blur-[110px]" />
+        <div className="absolute bottom-[-8%] left-[-6%] h-[22rem] w-[22rem] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.1),transparent_72%)] blur-[100px]" />
+        <div className="grid-mesh absolute inset-0 opacity-30" />
       </div>
 
-      <div className="container mx-auto max-w-6xl">
-        {/* 标题 */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <span className="font-mono text-[0.68rem] uppercase tracking-[0.45em] text-subtle">
-            Contact · 联系
-          </span>
-          <h2 className="text-3xl font-bold md:text-4xl">
-            联系<span className="aurora-text">我</span>
+      <div>
+        {/* 标题：左对齐 + 板块编号 04 + 细线规则（rule-index 一次给出这三件事） */}
+        <header className="flex flex-col gap-5">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="label-caps">Contact</span>
+            <span aria-hidden="true" className="rule-dot" />
+            <span className="label-caps">取得联系</span>
+          </div>
+          <h2
+            className="rule-index type-h1 editorial-text"
+            style={{ "--index": `'${formatIndex(4)}'` }}
+          >
+            联系我
           </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+          <p className="type-lede editorial-measure">
             如果你有项目想法、合作机会，或者只是想聊聊技术，欢迎随时联系我。
           </p>
-        </div>
+        </header>
 
-        {/* items-stretch：左右两栏等高；左栏（联系方式 + 社交）内容较少，
-            内部 justify-center 做垂直居中，与右侧表单卡对齐观感。 */}
-        <div className="mt-14 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
-          {/* 左：联系方式 + 社交 */}
-          <div className="flex flex-col justify-center gap-6">
-            <div className="glass-card glass-edge p-6 sm:p-8">
-              <h3 className="text-lg font-bold text-foreground sm:text-xl">联系方式</h3>
+        {/* 非对称两栏：左 4 列（窄，资料栏），右 7 列（宽，表单）。
+            左窄右宽不是随意定的——资料是「被查阅」的，表单是「被填写」的。 */}
+        <div className="mt-12 grid gap-y-12 lg:mt-16 lg:grid-cols-12 lg:gap-x-10">
+          {/* 左：联系方式（tabular 表）+ 社交 */}
+          <div className="flex flex-col gap-10 lg:col-span-4">
+            <div>
+              <h3 className="label-caps">联系方式 / Direct</h3>
 
-              <div className="mt-6 flex flex-col gap-3">
-                <a
-                  href="mailto:3463645195@qq.com"
-                  className="group flex items-start gap-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-soft/35 hover:bg-primary/[0.09]"
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/[0.1] bg-white/[0.05] text-primary-soft transition-transform duration-300 group-hover:scale-105">
-                    <Mail className="h-4.5 w-4.5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[0.7rem] uppercase tracking-[0.24em] text-subtle">
-                      邮箱
-                    </span>
-                    <span className="mt-1 block break-all text-sm text-foreground transition-colors duration-300 group-hover:text-primary-soft">
-                      3463645195@qq.com
-                    </span>
-                  </span>
-                </a>
-
-                <a
-                  href="tel:+86"
-                  className="group flex items-start gap-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-soft/35 hover:bg-primary/[0.09]"
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/[0.1] bg-white/[0.05] text-primary-soft transition-transform duration-300 group-hover:scale-105">
-                    <Phone className="h-4.5 w-4.5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[0.7rem] uppercase tracking-[0.24em] text-subtle">
-                      电话
-                    </span>
-                    <span className="mt-1 block text-sm text-foreground transition-colors duration-300 group-hover:text-primary-soft">
-                      +86 none
-                    </span>
-                  </span>
-                </a>
-
-                <div className="flex items-start gap-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/[0.1] bg-white/[0.05] text-cyan-soft">
-                    <MapPin className="h-4.5 w-4.5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[0.7rem] uppercase tracking-[0.24em] text-subtle">
-                      位置
-                    </span>
-                    <span className="mt-1 block text-sm text-foreground">中国，山东</span>
-                  </span>
-                </div>
-              </div>
+              {/* tabular：标签列定宽 4.5rem，所有值严格从同一 x 起排；
+                  值在窄栏里右对齐，读起来像简历/杂志的资料栏。 */}
+              {/* 结构说明：dl 的直接子元素必须是 dt/dd 或包住它们的 div，
+                  所以每行用 div 承载两列；链接放在 dd 内部而不是包住整行，
+                  这样既保住 mailto: 链接的可点击性，也不破坏 dl 的语义。 */}
+              <dl className="mt-4 flex flex-col">
+                {contactRows.map((row) => {
+                  const Icon = row.icon;
+                  return (
+                    <div
+                      key={row.label}
+                      className="group grid grid-cols-[4.5rem_minmax(0,1fr)] items-baseline gap-x-4 border-t border-rule py-3.5"
+                    >
+                      <dt className="flex items-center gap-2">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-primary-soft" aria-hidden="true" />
+                        <span className="label-caps">{row.label}</span>
+                      </dt>
+                      <dd className="break-all text-right text-sm text-foreground transition-colors duration-300 group-hover:text-primary-soft">
+                        {row.href ? (
+                          <a
+                            href={row.href}
+                            className="underline-offset-4 transition-colors duration-300 hover:text-primary-soft hover:underline"
+                          >
+                            {row.value}
+                          </a>
+                        ) : (
+                          row.value
+                        )}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+              <span aria-hidden="true" className="rule-hair" />
             </div>
 
-            {/* 社交平台：原图标与链接结构保留，只加玻璃底座 */}
-            <div className="glass-card p-6">
-              <h4 className="text-sm font-medium text-foreground">社交平台</h4>
-              <div className="mt-4 flex items-center gap-3">
+            {/* 社交平台：原图标、原链接、原 aria-label 全部保留，只去掉玻璃底座，
+                改成一条细线之下的裸图标行（悬停时才浮起并换品牌色）。 */}
+            <div>
+              <span aria-hidden="true" className="rule-hair" />
+              <h4 className="label-caps mt-5">社交平台 / Elsewhere</h4>
+              <div className="mt-4 flex items-center gap-5">
                 <a
                   href=""
                   aria-label="Twitter"
-                  className="group grid h-10 w-10 place-items-center rounded-xl border border-white/[0.09] bg-white/[0.03] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]"
+                  className="group grid h-6 w-6 place-items-center opacity-70 transition-all duration-300 hover:-translate-y-0.5 hover:opacity-100"
                 >
                   <svg
                     t="1783183182814"
@@ -227,7 +249,7 @@ export default function ContactSection() {
                 <a
                   href=""
                   aria-label="Discord"
-                  className="group grid h-10 w-10 place-items-center rounded-xl border border-white/[0.09] bg-white/[0.03] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]"
+                  className="group grid h-6 w-6 place-items-center opacity-70 transition-all duration-300 hover:-translate-y-0.5 hover:opacity-100"
                 >
                   <svg
                     t="1783183205446"
@@ -250,7 +272,7 @@ export default function ContactSection() {
                 <a
                   href=""
                   aria-label="Instagram"
-                  className="group grid h-10 w-10 place-items-center rounded-xl border border-white/[0.09] bg-white/[0.03] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]"
+                  className="group grid h-6 w-6 place-items-center opacity-70 transition-all duration-300 hover:-translate-y-0.5 hover:opacity-100"
                 >
                   <svg
                     t="1783183236346"
@@ -274,25 +296,20 @@ export default function ContactSection() {
             </div>
           </div>
 
-          {/* 右：表单（玻璃输入框 + 聚焦光晕 + 提交动效） */}
-          <div className="glass-card glass-edge noise-overlay relative overflow-hidden p-6 sm:p-8">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(124,92,255,0.22),transparent_70%)] blur-2xl"
-            />
+          {/* 右：表单。去掉玻璃卡与玻璃描边，只保留一条顶细线划分栏位。 */}
+          <div className="lg:col-span-7 lg:col-start-6">
+            <span aria-hidden="true" className="rule-hair" />
 
-            <div className="relative flex items-center justify-between gap-3">
-              <h3 className="text-lg font-bold text-foreground sm:text-xl">发送消息</h3>
-              <span className="rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-subtle">
-                在线发送
-              </span>
+            <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3">
+              <h3 className="type-h3 text-foreground">发送消息</h3>
+              <span className="label-caps">在线发送 / Direct message</span>
             </div>
 
-            <form onSubmit={handleSubmit} className="relative mt-6">
-              <div className="mb-4">
+            <form onSubmit={handleSubmit} className="mt-8">
+              <div className="mb-6">
                 <label
                   htmlFor="user_name"
-                  className="mb-2 block text-[0.72rem] font-medium uppercase tracking-[0.18em] text-subtle"
+                  className="label-caps mb-2 block"
                 >
                   你的姓名
                 </label>
@@ -309,10 +326,10 @@ export default function ContactSection() {
                 />
               </div>
 
-              <div className="mb-4">
+              <div className="mb-6">
                 <label
                   htmlFor="user_email"
-                  className="mb-2 block text-[0.72rem] font-medium uppercase tracking-[0.18em] text-subtle"
+                  className="label-caps mb-2 block"
                 >
                   你的邮箱
                 </label>
@@ -329,10 +346,10 @@ export default function ContactSection() {
                 />
               </div>
 
-              <div className="mb-5">
+              <div className="mb-8">
                 <label
                   htmlFor="message"
-                  className="mb-2 block text-[0.72rem] font-medium uppercase tracking-[0.18em] text-subtle"
+                  className="label-caps mb-2 block"
                 >
                   留言内容
                 </label>
@@ -357,13 +374,13 @@ export default function ContactSection() {
                 aria-live="polite"
                 data-fx-ripple={submitDisabled ? undefined : ""}
                 className={cn(
-                  "cosmic-button fx-ripple-host group w-full justify-center gap-2 text-sm",
-                  "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100 disabled:hover:shadow-none",
-                  /* 冷却中：明显「置灰」——去掉品牌渐变/辉光，压暗底色与文字，
-                     与可点击的亮紫按钮一眼可分。用 background-image:none
-                     覆盖 cosmic-button 的渐变，否则底色会被渐变盖住而不生效。 */
+                  "editorial-button-solid fx-ripple-host group w-full justify-center gap-2 text-sm",
+                  "disabled:cursor-not-allowed disabled:opacity-70",
+                  /* 冷却中：退成描边态 + 弱化文字，与可点击的实底按钮一眼可分。
+                     新按钮是「实底墨字」，冷却态直接关掉实底（bg-transparent），
+                     不需要再像旧 cosmic-button 那样用 bg-none 去盖渐变。 */
                   isCoolingDown &&
-                    "bg-white/[0.04] bg-none text-subtle shadow-none saturate-0 hover:scale-100 hover:shadow-none",
+                    "bg-transparent border-white/[0.16] text-subtle hover:bg-transparent hover:text-subtle",
                 )}
               >
                 {isSubmitting ? (
@@ -395,7 +412,7 @@ export default function ContactSection() {
               </MagneticButton>
 
               <p
-                className="mt-3 text-center text-[0.66rem] text-subtle"
+                className="type-micro mt-4 text-start"
                 aria-live="polite"
               >
                 {isCoolingDown
