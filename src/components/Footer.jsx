@@ -22,129 +22,113 @@ function GithubMark({ className }) {
   );
 }
 
+const footerNav = [
+  { href: "#hero", label: "首页" },
+  { href: "#about", label: "关于" },
+  { href: "#skill", label: "技能" },
+  { href: "#contact", label: "联系" },
+];
 
+/**
+ * 页脚 —— 杂志末页的资料栏（colophon），不是一块玻璃卡片。
+ *
+ * 做法：一条顶细线起头，之下全部是「小号大写宽字距标签 + 极细分隔线」，
+ * 不再有圆角、背景渐变、backdrop-blur 与玻璃高光；
+ * 品牌字号下调、字距放宽，让它读起来像刊头版权页而不是 App 顶栏。
+ * 功能面（导航锚点、GitHub / 邮件 / 回到顶部、ICP 备案）一律原样保留。
+ */
 export default function Footer() {
   return (
-    <footer className="relative z-[var(--z-content)] mt-8 px-3 pb-4 sm:px-4 sm:pb-6">
-      {/* 顶部极光分隔线 */}
-      <div
-        aria-hidden="true"
-        className="mx-auto mb-4 h-px w-full max-w-6xl bg-gradient-to-r from-transparent via-primary/45 to-transparent"
-      />
+    <footer className="editorial-shell relative z-[var(--z-content)] mt-16 pb-10 pt-2 md:mt-24 md:pb-14">
+      {/* 顶部规则线：整条细线，不再用两端渐隐的极光渐变色带 */}
+      <span aria-hidden="true" className="rule-hair" />
 
-      <div className="glass-card glass-edge noise-overlay mx-auto flex max-w-6xl flex-col gap-5 rounded-2xl px-5 py-6 sm:px-8">
-        {/* 上排：品牌 ↔ 按钮两端对齐；导航单独一层绝对居中。
-            原先三项都放进 justify-between，导航会被左右两块「挤」到偏右，
-            不是真正居中（左右宽度不等）。现在导航用绝对定位 + translate
-            钉在容器中线，与两侧块宽度无关。
-            移动端（<sm）改为纵向堆叠，导航回到正常流，不做绝对居中。 */}
-        <div className="relative flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
-          <div className="flex flex-col items-center gap-1.5 sm:items-start">
-            <span className="flex items-center gap-2 text-sm font-bold tracking-tight text-foreground">
-              <span
-                aria-hidden="true"
-                className="grid h-6 w-6 place-items-center rounded-[0.55rem] bg-gradient-to-br from-[#8b6dff] via-[#7c5cff] to-[#4169ff] text-[0.6rem] font-bold text-[#05060a] shadow-[0_0_16px_-4px_rgba(124,92,255,0.9)]"
-              >
-                KZ
-              </span>
-              Kuang Zihao
+      <div className="mt-8 flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+        {/* 品牌块：KZ 字标做成无底色的描边方框，只留一个字母，比渐变小方块克制 */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-baseline gap-3">
+            <span
+              aria-hidden="true"
+              className="grid h-6 w-6 shrink-0 place-items-center border border-rule-strong text-[0.6rem] font-medium tracking-[0.1em] text-foreground"
+            >
+              KZ
             </span>
-            <span className="text-[0.68rem] tracking-[0.22em] text-subtle">
-              FULLSTACK · 用心构建产品
-            </span>
+            <span className="type-h3 text-foreground">Kuang Zihao</span>
           </div>
-
-          <nav
-            aria-label="页脚导航"
-            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2"
-          >
-            <a
-              href="#hero"
-              className="text-xs text-muted transition-colors duration-300 hover:text-primary-soft"
-            >
-              首页
-            </a>
-            <a
-              href="#about"
-              className="text-xs text-muted transition-colors duration-300 hover:text-primary-soft"
-            >
-              关于
-            </a>
-            <a
-              href="#skill"
-              className="text-xs text-muted transition-colors duration-300 hover:text-primary-soft"
-            >
-              技能
-            </a>
-            <a
-              href="#contact"
-              className="text-xs text-muted transition-colors duration-300 hover:text-primary-soft"
-            >
-              联系
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener"
-              aria-label="访问 GitHub 主页"
-              data-fx-ripple=""
-              className="fx-ripple-host group grid h-8 w-8 place-items-center rounded-full border border-white/[0.1] bg-white/[0.03] text-muted transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-soft/40 hover:bg-primary/[0.12] hover:text-foreground active:scale-95"
-            >
-              <GithubMark className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110" />
-            </a>
-            <a
-              href={`mailto:${EMAIL}`}
-              aria-label={`发送邮件至 ${EMAIL}`}
-              data-fx-ripple=""
-              className="fx-ripple-host group grid h-8 w-8 place-items-center rounded-full border border-white/[0.1] bg-white/[0.03] text-muted transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-soft/40 hover:bg-cyan/[0.12] hover:text-foreground active:scale-95"
-            >
-              <Mail className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110" />
-            </a>
-            <a
-              href="#hero"
-              aria-label="回到顶部"
-              data-fx-ripple=""
-              className="fx-ripple-host group grid h-8 w-8 place-items-center rounded-full border border-white/[0.1] bg-white/[0.03] text-muted transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-soft/40 hover:bg-primary/[0.12] hover:text-foreground active:scale-95"
-            >
-              <ArrowUp className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5" />
-            </a>
-          </div>
+          <span className="label-caps">Fullstack · 用心构建产品</span>
         </div>
 
-        <div aria-hidden="true" className="h-px w-full bg-white/[0.06]" />
+        {/* 导航：小号大写宽字距，靠一条竖细线与品牌块分开（桌面端才出现） */}
+        <nav
+          aria-label="页脚导航"
+          className="flex flex-wrap items-baseline gap-x-6 gap-y-2 sm:border-l sm:border-rule-strong sm:pl-8"
+        >
+          {footerNav.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="label-caps border-b border-transparent pb-1 transition-colors duration-300 hover:border-rule-strong hover:text-primary-soft"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
 
-        {/* 下排：版权 + ICP 备案，两行各自水平居中
-            （窄屏不会挤成两端对齐，备案号始终居中） */}
-        <div className="flex flex-col items-center justify-center gap-2.5 text-center">
-          <p className="text-[0.68rem] leading-relaxed text-subtle sm:text-xs">
-            © {new Date().getFullYear()} Kuang Zihao · 保留所有权利
-          </p>
-
-          {/* ICP 备案：图标 + 号码合成一个低调的胶囊，悬停才略微亮起。
-              跳转逻辑保持原样（新窗口 + noopener noreferrer）。
-              aria-label 说明去向，屏幕阅读器不会只念号码；
-              图标 alt 置空 + aria-hidden，避免重复朗读。 */}
+        {/* 图标通道：去掉圆形描边底座，改成裸图标 + 悬停上浮 */}
+        <div className="flex items-center gap-5">
           <a
-            href={BEIAN_URL}
+            href={GITHUB_URL}
             target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${BEIAN_TEXT}，工业和信息化部备案管理系统，新窗口打开`}
-            className="group mx-auto inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[0.68rem] leading-none text-subtle transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-muted sm:text-[0.7rem]"
+            rel="noopener"
+            aria-label="访问 GitHub 主页"
+            className="group grid h-6 w-6 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground"
           >
-            <img
-              src={ICPLogo}
-              alt=""
-              aria-hidden="true"
-              className="h-3.5 w-3.5 shrink-0 opacity-85 transition-opacity duration-300 group-hover:opacity-100"
-              loading="lazy"
-              decoding="async"
-            />
-            <span className="whitespace-nowrap font-medium">{BEIAN_TEXT}</span>
+            <GithubMark className="h-4 w-4" />
+          </a>
+          <a
+            href={`mailto:${EMAIL}`}
+            aria-label={`发送邮件至 ${EMAIL}`}
+            className="group grid h-6 w-6 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-cyan-soft"
+          >
+            <Mail className="h-4 w-4" />
+          </a>
+          <a
+            href="#hero"
+            aria-label="回到顶部"
+            className="group grid h-6 w-6 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground"
+          >
+            <ArrowUp className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
           </a>
         </div>
+      </div>
+
+      {/* 版权行：细线之下，小号大写宽字距；ICP 备案保留原链接、原 aria-label */}
+      <div className="mt-8 flex flex-col gap-3 border-t border-rule pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="type-micro">
+          © {new Date().getFullYear()} Kuang Zihao · 保留所有权利
+        </p>
+
+        {/* ICP 备案：图标 + 号码合成一个低调的胶囊，悬停才略微亮起。
+            跳转逻辑保持原样（新窗口 + noopener noreferrer）。
+            aria-label 说明去向，屏幕阅读器不会只念号码；
+            图标 alt 置空 + aria-hidden，避免重复朗读。 */}
+        <a
+          href={BEIAN_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${BEIAN_TEXT}，工业和信息化部备案管理系统，新窗口打开`}
+          className="group inline-flex items-center gap-1.5 self-start type-micro transition-colors duration-300 hover:text-muted sm:self-auto"
+        >
+          <img
+            src={ICPLogo}
+            alt=""
+            aria-hidden="true"
+            className="h-3.5 w-3.5 shrink-0 opacity-85 transition-opacity duration-300 group-hover:opacity-100"
+            loading="lazy"
+            decoding="async"
+          />
+          <span className="whitespace-nowrap">{BEIAN_TEXT}</span>
+        </a>
       </div>
     </footer>
   );

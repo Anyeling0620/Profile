@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowDown, ArrowUpRight, MapPin, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUpRight, MapPin } from "lucide-react";
 import MagneticButton from "./fx/MagneticButton";
 
 const GITHUB_URL = "https://github.com/Anyeling0620";
@@ -24,6 +24,8 @@ function GithubMark({ className }) {
 const POSITIONING =
   "我使用现代技术打造出色的网页体验，覆盖从界面到服务端的完整链路，构建兼具美感、性能与可靠性的全栈产品。";
 
+/* 速览三项。编辑式版面里不再堆成同构玻璃卡片，
+   而是排成「标签 : 值」的 tabular 行，只用细线分隔。 */
 const HIGHLIGHTS = [
   { label: "定位", value: "全栈开发" },
   { label: "技术栈", value: "React · Go · Java" },
@@ -36,7 +38,10 @@ export default function HeroSection() {
   /* ---------- 鼠标视差：目标值 + rAF 缓动插值 ----------
      性能要点：位移**直接写 DOM transform**（ref），不用 useState。
      早期实现每帧 setPointer 会让整个 Hero（含标题/CTA/速览表）每帧重渲染，
-     在低端机上直接变成掉帧源。现在每帧只改 3~4 个元素的 transform。 */
+     在低端机上直接变成掉帧源。现在每帧只改 3~4 个元素的 transform。
+
+     注意：改版式时这段逻辑必须原样保留（含 layers 的档位系数），
+     它已按各层视觉深度调好，重新调参只会让位移失真。 */
   const targetRef = useRef({ x: 0, y: 0 });
   const currentRef = useRef({ x: 0, y: 0 });
   const frameRef = useRef(0);
@@ -107,20 +112,22 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative flex min-h-[100svh] items-center overflow-hidden px-4 pb-28 pt-28 sm:pt-32"
+      className="relative overflow-hidden pb-16 pt-32 sm:pb-20 sm:pt-36"
     >
       {/* ---------- 背景层（纯装饰） ----------
           性能说明：光斑不使用 filter: blur()。实测超大元素「blur + transform 动画」
-          会把帧间隔从 16.7ms 拉到 83~100ms；这里改用多段柔和渐变实现同样的羽化观感。 */}
+          会把帧间隔从 16.7ms 拉到 83~100ms；这里改用多段柔和渐变实现同样的羽化观感。
+          光斑按新的非对称版式重排：主光斑压右上（名字占左侧，右侧留白），
+          副光斑落左侧中部，第三层收右下角。 */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         {/* 极光光斑：视差层 > 呼吸层 */}
-        <div ref={glow1Ref} className="absolute left-1/2 top-[-16%] -translate-x-1/2">
+        <div ref={glow1Ref} className="absolute right-[-6%] top-[-18%]">
           <div className="h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle,rgba(124,92,255,0.34)_0%,rgba(124,92,255,0.24)_16%,rgba(124,92,255,0.14)_32%,rgba(124,92,255,0.06)_46%,rgba(124,92,255,0.02)_58%,transparent_70%)] fx-breathe" />
         </div>
-        <div ref={glow2Ref} className="absolute right-[-10%] top-[10%]">
+        <div ref={glow2Ref} className="absolute left-[-12%] top-[26%]">
           <div className="h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(circle,rgba(65,105,255,0.28)_0%,rgba(65,105,255,0.2)_16%,rgba(65,105,255,0.11)_32%,rgba(65,105,255,0.05)_46%,rgba(65,105,255,0.015)_58%,transparent_70%)] animate-[float_9s_ease-in-out_infinite] motion-reduce:animate-none" />
         </div>
-        <div ref={glow3Ref} className="absolute bottom-[-12%] left-[-8%]">
+        <div ref={glow3Ref} className="absolute bottom-[-14%] right-[-8%]">
           <div className="h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.2)_0%,rgba(34,211,238,0.14)_16%,rgba(34,211,238,0.08)_32%,rgba(34,211,238,0.035)_46%,rgba(34,211,238,0.01)_58%,transparent_72%)] animate-[float_11s_ease-in-out_infinite_1.2s] motion-reduce:animate-none" />
         </div>
         {/* 透视地平线网格 + 细网格 */}
@@ -138,61 +145,71 @@ export default function HeroSection() {
             transform: "skewX(-12deg)",
           }}
         />
-        {/* 顶部渐隐（衔接导航胶囊） / 底部渐隐（衔接下一板块） */}
+        {/* 顶部渐隐（衔接导航栏） / 底部渐隐（衔接下一板块） */}
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#05060a] via-[#05060a]/70 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#05060a] to-transparent" />
       </div>
 
-      <div className="container relative z-10">
-        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-          {/* 状态胶囊：视差层 + 进场层 */}
-          <div ref={badgeRef}>
-            <div className="animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none">
-              <span className="glass-card glass-edge inline-flex items-center gap-2 rounded-full border-white/[0.12] px-3.5 py-1.5 text-[0.72rem] tracking-[0.12em] text-muted">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan opacity-70" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
-                </span>
-                可接受新的合作 · 全栈开发
-              </span>
+      {/* ---------- 编辑式版式 ----------
+          .editorial-shell 提供非对称页边（桌面起始侧 1.7×），并已把 text-align 设为 start。
+          ⚠️ 这一层里不能再出现任何 text-center / justify-center / items-center 的主轴居中，
+          否则编辑式排版会被拉回「居中堆叠」的模板语法。 */}
+      <div className="editorial-shell relative z-10">
+        <div className="editorial-grid items-start">
+          {/* ============ 板块索引条 ============
+              编辑式版面用「01 / INTRO」这种栏目编号建立阅读顺序。
+              .rule-index 自带 tabular-nums 序号 + 贯穿到右侧的细线：
+              ::before 是序号，子元素落在中间列，::after 吃掉剩余宽度画线。
+              ⚠️ --index 的值必须带引号（CSS content 需要字符串）。 */}
+          <div className="col-span-4 md:col-span-8 lg:col-span-12">
+            <div
+              className="rule-index animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none"
+              style={{ "--index": "'01'" }}
+            >
+              <span className="label-caps text-muted">Intro</span>
             </div>
           </div>
 
-          {/* 问候 */}
+          {/* ============ 问候语 ============
+              比名字小两个数量级——编辑式的特征正是「超大 vs 极小」的高反差。 */}
           <p
-            className="mt-7 animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none font-mono text-[0.7rem] uppercase tracking-[0.5em] text-subtle"
+            className="col-span-4 mt-10 animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none label-caps text-subtle md:col-span-8 md:mt-12 lg:col-span-7 lg:mt-14"
             style={{ animationDelay: "90ms" }}
           >
             Hello, I&apos;m
           </p>
 
-          {/* 极光文字标题
-              ⚠️ 实测结论（不要再改回「双层叠加」）：
-              aurora-text 依赖 background-clip:text。给它的**子 span** 加
-              transform / opacity / filter 动画，渐变会被切断 → 文字退化成实色
-              （此前用双层叠加会留下 1px 亚像素重影，已修掉）。
-              唯一安全且仍有「逐词揭示」手感的做法：单个 aurora-text 容器，
-              子 span 只做 clip-path 揭示（clip-path 不影响背景切片的绘制）。
-              读屏只念一次：容器 aria-hidden，sr-only 提供完整文本。
-
-              间距说明：leading-[0.98] 会压掉行框上下留白，大字号的字形上缘
-              （尤其 Latin 大写与中文混排）容易顶到上一行的 "HELLO, I'M"。
-              因此这里给足 mt（移动端略小），并在下方 subtitle 也留出对应间距。
-
-              下伸部空间：leading-[1.02] 的行框底部不足以容纳 g/y/p/j/q 的下伸部分
-              （Kuang 的 g 会伸出行框）。这里用 pb 把行框底部撑开，
-              避免副标题按行框边界上移后压住字形。 */}
-          <h1 className="mt-6 text-[clamp(2.6rem,9vw,5.6rem)] font-black leading-[1.12] tracking-[-0.035em] sm:mt-7 lg:mt-8">
+          {/* ============ 名字：type-as-hero，左对齐偏轴 ============
+              版式要点（每条都是踩过的坑）：
+              1) 左对齐、只占 11/12 列 → 右侧留出不对称空白，视线被名字拽住。
+              2) 用 .editorial-text（实色 #f2f4ff，对比度 18.48:1）替代 aurora-text。
+                 **不要在这里再叠 aurora-text**：两者混用会让 -webkit-text-fill-color
+                 互相覆盖，渐变被切成实色块。
+              3) 换成实色后，子 span 的 clip-path 揭示是安全的——
+                 「子元素不能动 transform/opacity」的约束只对 background-clip:text 成立。
+                 fx-clip-reveal 末帧落到 clip-path:none，不会沿行框底切掉下伸部。
+              4) type-display 的 leading 是 0.96，行框上下几乎没余量：
+                 用内联 lineHeight 略放松 + paddingBottom 撑开行框底，
+                 避免 "Zihao" 的下伸部压到下面的副标题。
+              5) 读屏只念一次：容器 aria-hidden，sr-only 提供完整文本。 */}
+          <h1
+            className="grain-soft editorial-text type-display col-span-4 mt-4 animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none md:col-span-8 md:mt-5 lg:col-span-11 lg:mt-6"
+            style={{
+              animationDelay: "140ms",
+              lineHeight: "1.02",
+              paddingBottom: "0.14em",
+            }}
+          >
             <span className="sr-only">{NAME}</span>
             <span
               aria-hidden="true"
-              className="aurora-text inline-flex flex-wrap items-baseline justify-center gap-x-[0.24em] pb-[0.12em] drop-shadow-[0_0_38px_rgba(124,92,255,0.35)]"
+              className="inline-flex flex-wrap items-baseline gap-x-[0.2em]"
             >
               {NAME.split(" ").map((word, i) => (
                 <span
                   key={word}
                   className="fx-clip-reveal inline-block"
-                  style={{ "--fx-delay": `${160 + i * 115}ms` }}
+                  style={{ "--fx-delay": `${180 + i * 115}ms` }}
                 >
                   {word}
                 </span>
@@ -200,106 +217,110 @@ export default function HeroSection() {
             </span>
           </h1>
 
-          {/* 副标题 */}
+          {/* ============ 副标题 ============
+              细线 + 小号大写宽字距，替换原来的渐变短横线。 */}
           <div
-            className="mt-6 flex animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none items-center gap-3 text-sm text-muted sm:mt-7 sm:text-base"
+            className="col-span-4 mt-6 flex animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none items-center gap-3 md:col-span-8 lg:col-span-7"
+            style={{ animationDelay: "560ms" }}
+          >
+            <span aria-hidden="true" className="rule-hair-short flex-none" />
+            <span className="label-caps text-foreground">全栈开发工程师</span>
+          </div>
+
+          {/* ============ 左栏：导语 + CTA ============
+              限宽到 .editorial-measure（62ch ≈ 中文 38~40 字/行），保证可读行长。 */}
+          <div
+            className="col-span-4 mt-10 flex animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none flex-col gap-6 md:col-span-8 md:mt-12 lg:col-span-6 lg:mt-16"
             style={{ animationDelay: "640ms" }}
           >
-            <span
-              aria-hidden="true"
-              className="h-px w-8 bg-gradient-to-r from-transparent to-primary-soft/70"
-            />
-            <span className="font-medium tracking-[0.18em] text-foreground/90">
-              全栈开发工程师
-            </span>
-            <span
-              aria-hidden="true"
-              className="h-px w-8 bg-gradient-to-l from-transparent to-cyan-soft/70"
-            />
+            <p className="editorial-measure type-lede">{POSITIONING}</p>
+
+            {/* 主/次 CTA：磁吸 + 涟漪全部保留。
+                位移由 MagneticButton 直接写 transform，不触发重渲染。 */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <MagneticButton className="w-full sm:w-auto">
+                <a
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noopener"
+                  data-fx-ripple=""
+                  className="cosmic-button fx-ripple-host group w-full text-sm sm:w-auto"
+                >
+                  <GithubMark className="h-4 w-4" />
+                  访问 GitHub
+                  <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </a>
+              </MagneticButton>
+              <MagneticButton className="w-full sm:w-auto">
+                <a
+                  href="#contact"
+                  data-fx-ripple=""
+                  className="ghost-button fx-ripple-host group w-full text-sm sm:w-auto"
+                >
+                  联系我
+                  <ArrowUpRight className="h-4 w-4 text-primary-soft transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </a>
+              </MagneticButton>
+            </div>
           </div>
 
-          {/* 定位文案 */}
-          <p
-            className="mt-7 max-w-2xl animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none text-balance text-base leading-relaxed text-muted sm:text-lg"
-            style={{ animationDelay: "720ms" }}
-          >
-            {POSITIONING}
-          </p>
+          {/* ============ 右栏：状态 + tabular 速览 ============
+              起始列后移到第 9 列，与左栏错位，形成编辑式版面里常见的「两栏不齐头」。
+              视差层 badgeRef / statsRef 挂这里，档位（6 / 11）与原实现一致。 */}
+          <div className="col-span-4 mt-10 md:col-span-8 lg:col-span-4 lg:col-start-9 lg:mt-16">
+            <div ref={badgeRef} className="flex items-center gap-2.5">
+              <span className="relative flex h-1.5 w-1.5 flex-none">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan opacity-70" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
+              </span>
+              <span className="label-caps text-muted">可接受新的合作</span>
+            </div>
 
-          {/* 主/次 CTA */}
-          <div
-            className="mt-10 flex w-full animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none flex-col items-center gap-3 sm:w-auto sm:flex-row"
-            style={{ animationDelay: "820ms" }}
-          >
-            {/* 磁吸 + 涟漪：位移由 MagneticButton 直接写 transform，不触发重渲染 */}
-            <MagneticButton className="w-full sm:w-auto">
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noopener"
-                data-fx-ripple=""
-                className="cosmic-button fx-ripple-host group w-full text-sm sm:w-auto"
-              >
-                <GithubMark className="h-4 w-4" />
-                访问 GitHub
-                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </a>
-            </MagneticButton>
-            <MagneticButton className="w-full sm:w-auto">
-              <a
-                href="#contact"
-                data-fx-ripple=""
-                className="ghost-button fx-ripple-host group w-full text-sm sm:w-auto"
-              >
-                <Sparkles className="h-4 w-4 text-primary-soft transition-transform duration-300 group-hover:rotate-12" />
-                联系我
-              </a>
-            </MagneticButton>
+            {/* 三项速览：原来带边框的玻璃卡片是模板感最重的一处，
+                现在改成「标签 : 值」的 tabular 行，只用细线分隔。
+                线色走 --color-rule（16% 冷白）；2dppx 下 border 1px 视觉上接近 0.5px。 */}
+            <dl
+              ref={statsRef}
+              className="mt-5 animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none"
+              style={{ animationDelay: "720ms" }}
+            >
+              {HIGHLIGHTS.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-baseline justify-between gap-4 border-t py-2.5"
+                  style={{ borderTopColor: "var(--color-rule)" }}
+                >
+                  <dt className="label-caps flex-none text-subtle">{item.label}</dt>
+                  <dd className="flex items-center gap-1.5 text-right text-sm font-medium text-foreground">
+                    {item.label === "位置" && (
+                      <MapPin className="h-3.5 w-3.5 flex-none text-cyan-soft" aria-hidden="true" />
+                    )}
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
-          {/* 三项速览 */}
-          <dl
-            ref={statsRef}
-            className="mt-14 grid w-full max-w-2xl animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-md sm:grid-cols-3"
-            style={{ animationDelay: "920ms" }}
-          >
-            {HIGHLIGHTS.map((item) => (
-              <div
-                key={item.label}
-                className="flex flex-col items-center gap-1 bg-[#07080f]/60 px-4 py-4 transition-colors duration-300 hover:bg-primary/[0.08]"
-              >
-                <dt className="text-[0.62rem] uppercase tracking-[0.28em] text-subtle">
-                  {item.label}
-                </dt>
-                <dd className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                  {item.label === "位置" && (
-                    <MapPin className="h-3.5 w-3.5 text-cyan-soft" aria-hidden="true" />
-                  )}
-                  {item.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          {/* ============ 底部滚动提示 ============
+              从「正中」移到版心右下：细线先拉通整行，再落 Scroll 标签。 */}
+          <div className="col-span-4 mt-12 flex items-center gap-4 md:col-span-8 lg:col-span-12 lg:mt-16">
+            <span aria-hidden="true" className="rule-hair flex-1" />
+            <a
+              href="#about"
+              aria-label="向下滚动查看关于我"
+              className="group flex flex-none animate-[fade-in_1s_cubic-bezier(0.22,1,0.36,1)_1.1s_both] motion-reduce:animate-none items-center gap-2.5"
+            >
+              <span className="label-caps text-subtle transition-colors duration-300 group-hover:text-primary-soft">
+                Scroll
+              </span>
+              <span className="grid h-8 w-8 place-items-center rounded-full border border-transparent text-primary-soft transition-colors duration-300 group-hover:border-[color:var(--color-rule)]">
+                <ArrowDown className="h-4 w-4 animate-bounce" />
+              </span>
+            </a>
+          </div>
         </div>
       </div>
-
-      {/* 底部滚动提示 */}
-      <a
-        href="#about"
-        aria-label="向下滚动查看关于我"
-        className="group absolute bottom-7 left-1/2 z-10 flex -translate-x-1/2 animate-[fade-in_1s_cubic-bezier(0.22,1,0.36,1)_1.1s_both] motion-reduce:animate-none flex-col items-center gap-2"
-      >
-        <span className="text-[0.62rem] uppercase tracking-[0.42em] text-subtle transition-colors duration-300 group-hover:text-primary-soft">
-          Scroll
-        </span>
-        <span className="relative grid h-9 w-9 place-items-center rounded-full border border-white/[0.12] bg-white/[0.03] text-primary-soft backdrop-blur-md transition-all duration-300 group-hover:border-primary-soft/50 group-hover:bg-primary/[0.12]">
-          <ArrowDown className="h-4 w-4 animate-bounce" />
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 animate-ping rounded-full border border-primary-soft/30 [animation-duration:2.6s] motion-reduce:animate-none"
-          />
-        </span>
-      </a>
     </section>
   );
 }
