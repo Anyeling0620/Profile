@@ -1519,6 +1519,70 @@
 }
 
 /* ============================================================
+   编辑式主按钮 —— cosmic-button 的替代
+   ------------------------------------------------------------
+   为什么新增而不是改 cosmic-button：
+   老按钮是「圆角胶囊 + 紫蓝渐变 + 紫色外发光」，这套语法属于
+   消费级 SaaS 模板，与本站已经建立的「直角 / 实色 / 细线」编辑式
+   语言正面冲突（UI skill 也把 AI 紫蓝渐变列为反模式）。
+   但 cosmic-button 仍有 NotFound 页在引用，直接改会误伤，所以新增：
+     - 直角（0 圆角），只用 1px 描边或实色反转底
+     - 零渐变、零外发光，悬停只做「底色反转 + 描边变亮」这一级反馈
+     - 保留 padding 与 inline-flex 布局，调用点只需换类名即可
+   ============================================================ */
+@utility editorial-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.72rem 1.6rem;
+  border-radius: 0;
+  border: 1px solid var(--color-rule-strong);
+  background-color: transparent;
+  color: var(--color-foreground);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition:
+    background-color var(--duration-base) var(--ease-out-expo),
+    border-color var(--duration-base) var(--ease-out-expo),
+    color var(--duration-base) var(--ease-out-expo);
+
+  /* 悬停：实色反转（浅底墨字），不使用任何渐变或光晕 */
+  &:hover {
+    background-color: var(--color-foreground);
+    border-color: var(--color-foreground);
+    color: var(--color-background);
+  }
+}
+
+/* 实色变体：强调主 CTA（实底 + 墨色字，直角、无光晕） */
+@utility editorial-button-solid {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.72rem 1.6rem;
+  border-radius: 0;
+  border: 1px solid var(--color-foreground);
+  background-color: var(--color-foreground);
+  color: var(--color-background);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition:
+    background-color var(--duration-base) var(--ease-out-expo),
+    border-color var(--duration-base) var(--ease-out-expo),
+    color var(--duration-base) var(--ease-out-expo);
+
+  /* 悬停：退成描边态，形成与控制台一致的反转手感 */
+  &:hover {
+    background-color: transparent;
+    color: var(--color-foreground);
+  }
+}
+
+/* ============================================================
    根节点 & 动效降级
    ============================================================ */
 

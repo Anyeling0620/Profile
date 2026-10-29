@@ -379,13 +379,13 @@ export default function ContactSection() {
                 aria-live="polite"
                 data-fx-ripple={submitDisabled ? undefined : ""}
                 className={cn(
-                  "cosmic-button fx-ripple-host group w-full justify-center gap-2 text-sm",
-                  "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100 disabled:hover:shadow-none",
-                  /* 冷却中：明显「置灰」——去掉品牌渐变/辉光，压暗底色与文字，
-                     与可点击的亮紫按钮一眼可分。用 background-image:none
-                     覆盖 cosmic-button 的渐变，否则底色会被渐变盖住而不生效。 */
+                  "editorial-button-solid fx-ripple-host group w-full justify-center gap-2 text-sm",
+                  "disabled:cursor-not-allowed disabled:opacity-70",
+                  /* 冷却中：退成描边态 + 弱化文字，与可点击的实底按钮一眼可分。
+                     新按钮是「实底墨字」，冷却态直接关掉实底（bg-transparent），
+                     不需要再像旧 cosmic-button 那样用 bg-none 去盖渐变。 */
                   isCoolingDown &&
-                    "bg-white/[0.04] bg-none text-subtle shadow-none saturate-0 hover:scale-100 hover:shadow-none",
+                    "bg-transparent border-white/[0.16] text-subtle hover:bg-transparent hover:text-subtle",
                 )}
               >
                 {isSubmitting ? (

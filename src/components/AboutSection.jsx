@@ -132,9 +132,12 @@ export default function AboutSection() {
           >
             {/* grain-soft：只在超大标题背后铺一层 0.02 的纸纤维，不动正文对比度 */}
             <div className="grain-soft">
-              <p className="type-h2 editorial-text">
-                热爱创造的<span className="editorial-accent">全栈</span>
-                开发者与技术创作者
+              {/* ⚠️ 断词防护（375px 实测）：原先写成「<span>全栈</span>开发者」，
+                  span 边界给浏览器提供了一个合法断行点，「全栈开发者」被劈成
+                  「全栈开 / 发者」。修法：不在词内插 span，改用 text-wrap:balance
+                  让换行在词边界均衡分配。 */}
+              <p className="type-h2 editorial-text [text-wrap:balance]">
+                热爱创造的全栈开发者与技术创作者
               </p>
             </div>
 

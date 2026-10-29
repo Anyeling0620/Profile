@@ -244,7 +244,7 @@ export default function HeroSection() {
                   target="_blank"
                   rel="noopener"
                   data-fx-ripple=""
-                  className="cosmic-button fx-ripple-host group w-full text-sm sm:w-auto"
+                  className="editorial-button-solid fx-ripple-host group w-full text-sm sm:w-auto"
                 >
                   <GithubMark className="h-4 w-4" />
                   访问 GitHub

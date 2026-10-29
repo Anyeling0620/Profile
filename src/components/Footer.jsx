@@ -75,27 +75,31 @@ export default function Footer() {
         </nav>
 
         {/* 图标通道：去掉圆形描边底座，改成裸图标 + 悬停上浮 */}
-        <div className="flex items-center gap-5">
+        {/* 图标命中区：视觉尺寸保持小（编辑式要克制），但点击区必须够大。
+            实测原 h-6 w-6（24px）已是 WCAG 2.5.8 的下限，而图标本身只有 16px，
+            真实可点区域约 15.3px，低于 24px 要求。这里用 min-h/min-w 44px 撑开
+            命中区（WCAG 2.5.5 舒适目标），图标本身仍是 h-4 w-4，观感不变。 */}
+        <div className="flex items-center gap-3">
           <a
             href={GITHUB_URL}
             target="_blank"
             rel="noopener"
             aria-label="访问 GitHub 主页"
-            className="group grid h-6 w-6 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground"
+            className="group grid min-h-11 min-w-11 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground"
           >
             <GithubMark className="h-4 w-4" />
           </a>
           <a
             href={`mailto:${EMAIL}`}
             aria-label={`发送邮件至 ${EMAIL}`}
-            className="group grid h-6 w-6 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-cyan-soft"
+            className="group grid min-h-11 min-w-11 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-cyan-soft"
           >
             <Mail className="h-4 w-4" />
           </a>
           <a
             href="#hero"
             aria-label="回到顶部"
-            className="group grid h-6 w-6 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground"
+            className="group grid min-h-11 min-w-11 place-items-center text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground"
           >
             <ArrowUp className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
           </a>

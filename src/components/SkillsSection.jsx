@@ -91,10 +91,22 @@ const levelLabel = (level) => {
   return "掌握";
 };
 
-/* 全局收录号：按数据原始顺序固定 01~33。
-   为什么不用「带内重新编号」：筛选时带内序号会整体漂移（03 变 01），
-   序号作为版面锚点必须稳定 —— 它标识的是「第几项技能」，不是「本行第几个」。 */
-const indexByName = new Map(skills.map((skill, i) => [skill.name, formatIndex(i + 1)]));
+/* 序号按「版面阅读序」动态生成，不再用数据源原始下标。
+   ⚠️ 踩过的坑：早期用数据源下标静态编号（HTML/CSS=01、React=02），
+   但各带内部会按「主打优先 → 熟练度降序」重排渲染顺序，
+   于是版面实际阅读序变成 02(大卡) → 01 → 04 → 03，编号倒挂。
+   编辑式版面的序号是**阅读导航**，必须严格跟随视觉顺序，
+   所以改为在 visibleBands 算好之后按展开顺序连续编号。 */
+function withReadingOrder(visibleBands) {
+  let cursor = 0;
+  return visibleBands.map((band) => ({
+    ...band,
+    items: band.items.map((skill) => ({
+      ...skill,
+      figure: formatIndex(++cursor),
+    })),
+  }));
+}
 
 /* 计数用的补零：formatIndex 的 min 默认 1（0 号板块不允许），
    但「当前展示 0 项」是合法状态，所以这里单独放行 0。 */
@@ -185,7 +197,11 @@ const bandOf = (skill) => {
 const slotClass = {
   lead: "col-span-4 md:col-span-8 md:row-span-2 lg:col-span-8 lg:row-span-2",
   medium: "col-span-4 md:col-span-4 lg:col-span-4",
-  small: "col-span-4 md:col-span-2 lg:col-span-4",
+  /* md 档的 small 必须取 4 列（= 半幅），不能取 2 列。
+     ⚠️ 踩过的坑：md 是 8 列，一个带里有 3 张 small，若各占 2 列则合计 6 列，
+     右侧固定空出 2 列（实测约 200px 的空带），整行无法铺满。
+     取 4 列后：3 张 small = 12 列，在 8 列栅格里自然折成「2 + 1」，右缘整齐收口。 */
+  small: "col-span-4 md:col-span-4 lg:col-span-4",
   strip: "col-span-4 md:col-span-8 lg:col-span-12",
 };
 
@@ -250,7 +266,8 @@ function SkillCell({ skill, index, slot, active, delay }) {
            「盒子浮起来」这类反馈要克制到几乎看不见。 */
         "border-t border-[var(--color-rule)] pt-4",
         "transition-[border-color] duration-300 hover:border-t-[color:var(--color-rule-strong)]",
-        isLead ? "pb-6" : isStrip ? "pb-4" : "pb-5",
+        /* 卡片底部内边距：移动端压缩一档，避免 375px 下把整节撑到 8 屏 */
+        isLead ? "pb-4 md:pb-6" : isStrip ? "pb-3 md:pb-4" : "pb-4 md:pb-5",
         isStrip && "md:flex-row md:items-end md:justify-between md:gap-8",
         active
           ? "animate-[tilt-in_0.55s_cubic-bezier(0.22,1,0.36,1)_both]"
@@ -409,15 +426,18 @@ export default function SkillsSection() {
     [],
   );
 
-  /* 当前分类下要展示的带；整带没有命中项就整节隐藏 */
+  /* 当前分类下要展示的带；整带没有命中项就整节隐藏。
+     最后一步 withReadingOrder 给每张卡挂上「按视觉顺序」的连续序号（见函数注释）。 */
   const visibleBands = useMemo(() => {
-    if (activeCategory === "all") return bandsWithSkills;
-    return bandsWithSkills
-      .filter((band) => band.items.some((s) => s.category === activeCategory))
-      .map((band) => ({
-        ...band,
-        items: band.items.filter((s) => s.category === activeCategory),
-      }));
+    if (activeCategory === "all") return withReadingOrder(bandsWithSkills);
+    return withReadingOrder(
+      bandsWithSkills
+        .filter((band) => band.items.some((s) => s.category === activeCategory))
+        .map((band) => ({
+          ...band,
+          items: band.items.filter((s) => s.category === activeCategory),
+        })),
+    );
   }, [activeCategory, bandsWithSkills]);
 
   const visibleCount = visibleBands.reduce((sum, band) => sum + band.items.length, 0);
@@ -461,7 +481,12 @@ export default function SkillsSection() {
               >
                 03
               </span>
-              <h2 className="type-h1 pb-2 md:pb-3">
+              {/* md 档（768px）实测该标题会被压成「我的/技能」两行、与左侧 03 序号打架。
+                  根因不是 white-space（nowrap 已生效），而是 h2 在 flex 行里被**压缩**了：
+                  兄弟节点「03」超大序号约占 105px，h2 没有 shrink-0，被挤到 139px 宽，
+                  于是 nowrap 的字在框内溢出、视觉上仍表现为折行。
+                  所以必须 shrink-0 让标题保住固有宽度，序号那侧本来就已 shrink-0。 */}
+              <h2 className="type-h1 shrink-0 whitespace-nowrap pb-2 md:pb-3">
                 我的<span className="editorial-text">技能</span>
               </h2>
             </div>
@@ -531,8 +556,12 @@ export default function SkillsSection() {
               key={`${activeCategory}-${band.id}`}
               aria-labelledby={`skills-band-${band.id}`}
               className={cn(
-                /* 非对称留白：交替的带间距，不让每一节都等距 */
-                bandIdx === 0 ? "mt-10" : bandIdx % 2 === 0 ? "mt-20" : "mt-14",
+                /* 非对称留白：交替的带间距，不让每一节都等距（这是编辑式的手势）。
+                   ⚠️ 移动端必须压缩：375px 下原本整节高达 7828px、占全页 63%，
+                   要滚近 8 屏才到「联系」，密度失控。手机上带间距统一降到 8/10，
+                   大留白只在 md+ 生效 —— 编辑式留白是给宽版面用的，
+                   窄屏上同样的绝对值会被拉成无意义的空白。 */
+                bandIdx === 0 ? "mt-8 md:mt-10" : bandIdx % 2 === 0 ? "mt-10 md:mt-20" : "mt-8 md:mt-14",
               )}
             >
               <div className="flex items-baseline gap-4">
@@ -564,7 +593,7 @@ export default function SkillsSection() {
                   <SkillCell
                     key={`${activeCategory}-${skill.name}`}
                     skill={skill}
-                    index={indexByName.get(skill.name)}
+                    index={skill.figure}
                     slot={band.slots[i] ?? "small"}
                     active={inView}
                     /* 错峰：带内 50ms、带间 100ms 偏移，整体封顶 640ms */

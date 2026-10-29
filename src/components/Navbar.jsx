@@ -157,8 +157,12 @@ export default function Navbar() {
           isScrolled ? "opacity-100" : "opacity-0",
         )}
       >
+        {/* 阅读进度条：单色细线。
+            原来是紫→蓝→青三段渐变，那是装饰性彩色渐变，与全站
+            「直角 / 实色 / 细线」的编辑式语言冲突（评审也点名了）。
+            改成一条单色 hairline：进度是**信息**，不需要配色表演。 */}
         <div
-          className="h-full origin-left bg-gradient-to-r from-primary via-accent to-cyan"
+          className="h-full origin-left bg-cyan-soft"
           style={{ transform: `scaleX(${progress})` }}
         />
       </div>
@@ -260,13 +264,24 @@ export default function Navbar() {
               GitHub
             </a>
 
-            {/* 主 CTA：保留极光渐变（全站唯一），但不加胶囊阴影，改为细边框 + 文字强调 */}
+            {/* 主 CTA：与 GitHub 链接同一套语法 —— 纯文字 + 悬停下划线，
+                不写圆角胶囊、不写紫蓝渐变。导航是页面的"目录页"，
+                目录里的链接不需要按钮化的彩色块。 */}
             <a
               href="#contact"
               onClick={() => handleNavigate("contact")}
-              className="hidden rounded-full bg-gradient-to-r from-[#8b6dff] to-[#4169ff] px-4 py-1.5 text-xs font-bold text-[#05060a] transition-transform duration-300 hover:-translate-y-0.5 md:inline-flex"
+              className="group hidden items-center gap-1.5 text-xs font-semibold text-foreground md:inline-flex"
             >
-              联系我
+              <span className="relative">
+                联系我
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 -bottom-1 h-px origin-left scale-x-100 bg-rule-strong transition-transform duration-300 group-hover:scale-x-100"
+                />
+              </span>
+              <span aria-hidden="true" className="text-cyan-soft">
+                →
+              </span>
             </a>
 
             {/* 移动端菜单开关。
