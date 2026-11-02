@@ -3,7 +3,7 @@ import ICPLogo from "../assets/ICP-Logo.png";
 
 const GITHUB_URL = "https://github.com/Anyeling0620";
 const BEIAN_URL = "https://beian.miit.gov.cn/";
-const BEIAN_TEXT = "粤ICP备2025492035号";
+const BEIAN_TEXT = "粤ICP备2025492035号-3";
 const EMAIL = "3463645195@qq.com";
 
 /* lucide-react 1.x 已移除品牌图标（Github 导出不再存在），
